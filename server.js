@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
-const here = fileURLToPath(new URL('.', import.meta.url));
+const publicDir = fileURLToPath(new URL('./public/', import.meta.url));
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = process.env;
 const supabase = SUPABASE_URL && SUPABASE_ANON_KEY
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -46,7 +46,7 @@ app.get('/api/scholarships', async (_req, res) => {
   }
 });
 
-app.use(express.static(here, { extensions: ['html'] }));
+app.use(express.static(publicDir, { extensions: ['html'] }));
 
 app.listen(port, () => {
   console.log(`Scholly India running at http://localhost:${port}`);

@@ -38,4 +38,6 @@ The supplied CSV has matching scholarship columns. Import it into the `Scholarsh
 
 ## Deploy
 
-Deploy this folder to a Node.js host, set the same environment variables in the host's secret settings, and use `npm start`. Configure the host's build step as `npm install` and its start command as `npm start`.
+Deploy this folder to Vercel with the Express preset. Keep the root directory as `./` and add `SUPABASE_URL` and `SUPABASE_ANON_KEY` in Project Settings → Environment Variables for the environments you use. Vercel serves the website files from `public/`; the Express app handles `/api/*` requests. Push a commit to the production branch to trigger a new production deployment.
+
+For local development, the Express app serves `public/` and the API on the same origin. Run `npm run dev` and open `http://localhost:3000`.
