@@ -38,6 +38,8 @@ The supplied CSV has matching scholarship columns. Import it into the `Scholarsh
 
 ## Deploy
 
-Deploy this folder to Vercel with the Express preset. Keep the root directory as `./` and add `SUPABASE_URL` and `SUPABASE_ANON_KEY` in Project Settings → Environment Variables for the environments you use. Vercel serves the website files from `public/`; the Express app handles `/api/*` requests. Push a commit to the production branch to trigger a new production deployment.
+Deploy this repository to Netlify from GitHub. Netlify uses `public/` for the website, wraps the Express API as a function, and rewrites `/api/*` to that function.
 
-For local development, the Express app serves `public/` and the API on the same origin. Run `npm run dev` and open `http://localhost:3000`.
+In Netlify, set the publish directory to `public` if it is not read from `netlify.toml`. Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` under Site configuration → Environment variables, then trigger a deploy. Never add `.env` to GitHub.
+
+For local development, run `npm install` and `npm run dev`, then open `http://localhost:3000`.
