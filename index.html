@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="google-site-verification" content="yUyiVsybWGg0f94nzU_8MfxIffNoQppP9i8qSufcEO8" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Scholly India – Find Your Scholarship</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+</head>
+<body>
+<!-- ===================== HEADER ===================== -->
+<header>
+  <div class="logo" onclick="showPage('landing')">
+    <div class="logo-icon">🎓</div>
+    <div class="logo-text">
+      <span class="logo-main">Scholly India</span>
+      <span class="logo-sub">Fund Your Future</span>
+    </div>
+  </div>
+  <nav>
+    <a onclick="showPage('landing')" id="nav-home">Home</a>
+    <a onclick="goToSearch()" id="nav-search">Browse Scholarships</a>
+    <a href="#page-contact" onclick="showPage('contact');return false;">Contact</a>
+    <a class="nav-cta" onclick="goToSearch()"><i class="fas fa-search"></i> Search Now</a>
+  </nav>
+</header>
+
+<!-- ===================== PAGE 1: LANDING ===================== -->
+<div class="page active" id="page-landing">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge"><i class="fas fa-star"></i> India's #1 Scholarship Finder</div>
+      <h1>Unlock Your <span>Academic</span> Future Today</h1>
+      <p>Thousands of scholarships from Central Government, State Governments & Private Organisations — all in one place. Don't let finances stop your dreams.</p>
+      <div class="hero-search">
+        <input type="text" id="hero-search-input" placeholder="Search by scholarship name, course…" onkeydown="if(event.key==='Enter')heroSearch()" />
+        <button onclick="heroSearch()"><i class="fas fa-search"></i> Search</button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <div class="stat-num" id="total-count">100<span>+</span></div>
+          <div class="stat-label">Scholarships Listed</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">3<span>+</span></div>
+          <div class="stat-label">Categories</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">₹<span>Lakhs</span></div>
+          <div class="stat-label">In Rewards Available</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-image">
+      <img src="https://images.unsplash.com/photo-1606761568499-6d2451b23c66?w=900&q=80" alt="College Students India" loading="eager" />
+      <div class="hero-floating-card hfc-1">
+        <div class="hfc-icon">🏆</div>
+        <div class="hfc-label">Top Reward</div>
+        <div class="hfc-value" id="top-reward">Loading…</div>
+      </div>
+      <div class="hero-floating-card hfc-2">
+        <div class="hfc-icon">⏰</div>
+        <div class="hfc-label">Applications Open</div>
+        <div class="hfc-value">Apply Now!</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features">
+    <div class="section-tag">Why Scholly India?</div>
+    <h2 class="section-title">Everything You Need to Find <br>The Right Scholarship</h2>
+    <p class="section-sub">We make scholarship search simple, fast, and accessible for every Indian student.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Smart Filters</h3>
+        <p>Filter by category, course, family income, academic percentage, deadline and more to find scholarships made for you.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Real-Time Data</h3>
+        <p>Our database is always up to date. Get the latest scholarship information directly from official sources.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏛️</div>
+        <h3>All Categories</h3>
+        <p>National, State-level, and Private scholarships — from NSP, PFMS, state portals, and private organisations.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3>Mobile Friendly</h3>
+        <p>Search and apply from anywhere — our platform works perfectly on phones, tablets, and desktops.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔗</div>
+        <h3>Direct Apply Links</h3>
+        <p>No more searching for forms. Every scholarship has a verified direct application link so you can apply instantly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🆓</div>
+        <h3>100% Free</h3>
+        <p>Scholly India is completely free for students. We believe every student deserves access to financial help.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section class="categories">
+    <div class="section-tag">Browse by Category</div>
+    <h2 class="section-title">Find Scholarships Your Way</h2>
+    <div class="cat-grid">
+      <div class="cat-card" onclick="filterByCategory('SC/ST')">
+        <span class="cat-emoji">🛡️</span>
+        <h3>SC / ST</h3>
+        <p>Scheduled Caste & Scheduled Tribe scholarships</p>
+      </div>
+      <div class="cat-card" onclick="filterByCategory('OBC')">
+        <span class="cat-emoji">⭐</span>
+        <h3>OBC</h3>
+        <p>Other Backward Classes scholarships</p>
+      </div>
+      <div class="cat-card" onclick="filterByCategory('Minority')">
+        <span class="cat-emoji">🌙</span>
+        <h3>Minority</h3>
+        <p>Minority community scholarships</p>
+      </div>
+      <div class="cat-card" onclick="filterByCategory('Merit')">
+        <span class="cat-emoji">🏆</span>
+        <h3>Merit Based</h3>
+        <p>For high-performing students across India</p>
+      </div>
+      <div class="cat-card" onclick="filterByCategory('Girls')">
+        <span class="cat-emoji">👩‍🎓</span>
+        <h3>Girls / Women</h3>
+        <p>Exclusive scholarships for girl students</p>
+      </div>
+      <div class="cat-card" onclick="filterByCategory('Engineering')">
+        <span class="cat-emoji">⚙️</span>
+        <h3>Engineering</h3>
+        <p>For B.Tech, M.Tech & engineering courses</p>
+      </div>
+      <div class="cat-card" onclick="filterByCategory('Medical')">
+        <span class="cat-emoji">🏥</span>
+        <h3>Medical</h3>
+        <p>MBBS, Nursing, Pharmacy scholarships</p>
+      </div>
+      <div class="cat-card" onclick="goToSearch()">
+        <span class="cat-emoji">🔎</span>
+        <h3>All Scholarships</h3>
+        <p>View the complete scholarship database</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2>Your Perfect Scholarship is Waiting</h2>
+    <p>Start your search now and take the first step towards a brighter future.</p>
+    <button class="btn-primary" onclick="goToSearch()"><i class="fas fa-search"></i> Find My Scholarship</button>
+    <button class="btn-secondary" onclick="goToSearch()">View All <i class="fas fa-arrow-right"></i></button>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-icon">🎓</div>
+          <div class="logo-text">
+            <span class="logo-main" style="color:white">Scholly India</span>
+            <span class="logo-sub">Fund Your Future</span>
+          </div>
+        </div>
+        <p>India's most comprehensive scholarship discovery platform. Helping students across the country access the financial support they deserve.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Discover</h4>
+        <a onclick="goToSearch()">All Scholarships</a>
+        <a onclick="filterByCategory('SC/ST')">SC/ST Scholarships</a>
+        <a onclick="filterByCategory('Merit')">Merit Based</a>
+        <a onclick="filterByCategory('Girls')">Girls Scholarships</a>
+      </div>
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <a onclick="showPage('how-to-apply')">How to Apply</a>
+        <a onclick="showPage('documents')">Documents Needed</a>
+        <a onclick="showPage('nsp')">NSP Portal</a>
+        <a onclick="showPage('pfms')">PFMS Portal</a>
+      </div>
+      <div class="footer-col">
+        <h4>About</h4>
+        <a onclick="showPage('about')">About Scholly</a>
+        <a onclick="showPage('contact')">Contact Us</a>
+        <a onclick="showPage('privacy')">Privacy Policy</a>
+        <a onclick="showPage('disclaimer')">Disclaimer</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Scholly India. All rights reserved. | For students, by students.</span>
+      <div class="footer-socials">
+        <a href="https://www.instagram.com/blastedlimit?utm_source=ig_web_button_share_sheet&amp;igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+        
+        <a href="https://www.linkedin.com/in/lakshya-mishra-03b103291?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app"><i class="fab fa-linkedin-in"></i></a>
+        <a href="https://www.youtube.com/@BlastedLimit"><i class="fab fa-youtube"></i></a>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ===================== PAGE 2: SEARCH ===================== -->
+<div class="page" id="page-search">
+  <div class="search-hero">
+    <h1>Find Your Scholarship</h1>
+    <p>Use filters to discover scholarships that match your profile exactly</p>
+    <div class="main-search-bar">
+      <input type="text" id="search-input" placeholder="Search scholarship name…" oninput="applyFilters()" />
+      <button onclick="applyFilters()"><i class="fas fa-search"></i> Search</button>
+    </div>
+  </div>
+
+  <div class="search-content">
+    <!-- FILTERS -->
+    <aside class="filters-panel">
+      <div class="filters-header">
+        <h3><i class="fas fa-sliders-h" style="color:var(--orange);margin-right:8px"></i>Filters</h3>
+        <button class="clear-btn" onclick="clearFilters()">Clear All</button>
+      </div>
+
+      <div class="filter-group">
+        <label>Category</label>
+        <div class="filter-select-wrap">
+          <select id="f-category" onchange="applyFilters()">
+            <option value="">All Categories</option>
+            <option>SC</option><option>ST</option><option>OBC</option>
+            <option>Minority</option><option>General</option>
+            <option>Girls</option><option>EWS</option><option>Merit</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Course / Stream</label>
+        <div class="filter-select-wrap">
+          <select id="f-course" onchange="applyFilters()">
+            <option value="">All Courses</option>
+            <optgroup label="✅ Available">
+              <option value="engineering">Engineering / B.Tech / BE</option>
+            </optgroup>
+            <optgroup label="⚠️ Coming Soon">
+              <option value="__nodata__medical">Medical / MBBS</option>
+              <option value="__nodata__arts">Arts / Humanities</option>
+              <option value="__nodata__science">Science / B.Sc</option>
+              <option value="__nodata__commerce">Commerce / B.Com</option>
+              <option value="__nodata__law">Law / LLB</option>
+              <option value="__nodata__management">Management / MBA</option>
+              <option value="__nodata__iti">ITI / Diploma</option>
+              <option value="__nodata__pg">Post Graduate</option>
+              <option value="__nodata__phd">PhD / Research</option>
+            </optgroup>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Deadline Month</label>
+        <div class="filter-select-wrap">
+          <select id="f-deadline" onchange="applyFilters()">
+            <option value="">Any Month</option>
+            <option>January</option><option>February</option><option>March</option>
+            <option>April</option><option>May</option><option>June</option>
+            <option>July</option><option>August</option><option>September</option>
+            <option>October</option><option>November</option><option>December</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>My Family Income (₹/yr)</label>
+        <input type="number" id="f-income" placeholder="e.g. 250000" oninput="applyFilters()" />
+        <div style="font-size:11px;color:var(--gray);margin-top:5px;">Enter your family income to see eligible scholarships</div>
+      </div>
+
+      <div class="filter-group">
+        <label>My Academic % (Minimum you have)</label>
+        <input type="number" id="f-percent" placeholder="e.g. 75" min="0" max="100" oninput="applyFilters()" />
+      </div>
+    </aside>
+
+    <!-- RESULTS -->
+    <div class="results-area">
+      <div class="results-top">
+        <div class="results-count">Showing <strong id="result-count">0</strong> scholarships</div>
+        <select class="sort-select" id="sort-select" onchange="applyFilters()">
+          <option value="name">Sort: A-Z</option>
+          <option value="amount">Sort: Highest Reward</option>
+          <option value="deadline">Sort: Deadline</option>
+        </select>
+      </div>
+      <div class="cards-grid" id="cards-container">
+        <div class="loader"><div class="spinner"></div><p>Loading scholarships…</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-bottom" style="border-top:none;padding-top:0">
+      <span>© 2026 Scholly India. All rights reserved.</span>
+      <a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a>
+    </div>
+  </footer>
+</div>
+
+<!-- ===================== PAGE 3: DETAIL ===================== -->
+<div class="page detail-page" id="page-detail">
+  <div class="breadcrumb">
+    <a onclick="showPage('landing')"><i class="fas fa-home"></i> Home</a>
+    <i class="fas fa-chevron-right"></i>
+    <a onclick="showPage('search')">Scholarships</a>
+    <i class="fas fa-chevron-right"></i>
+    <span id="bc-name" style="color:var(--navy);font-weight:600">Details</span>
+  </div>
+
+  <div class="detail-content">
+    <div class="detail-grid" id="detail-grid">
+      <div class="loader"><div class="spinner"></div><p>Loading details…</p></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-bottom" style="border-top:none;padding-top:0">
+      <span>© 2026 Scholly India. All rights reserved.</span>
+      <a onclick="showPage('search')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Search</a>
+    </div>
+  </footer>
+</div>
+
+
+<!-- ===================== PAGE: HOW TO APPLY ===================== -->
+<div class="page" id="page-how-to-apply">
+  <div class="info-page-hero">
+    <span class="page-icon">📝</span>
+    <h1>How to Apply for a Scholarship</h1>
+    <p>A simple step-by-step guide to help you apply successfully.</p>
+  </div>
+  <div class="info-page-body">
+    <div class="container">
+      <button class="back-btn" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+      <div class="info-card">
+        <h2><span>📌</span> Before You Begin</h2>
+        <p>Applying for a scholarship can feel overwhelming, but if you follow the right steps, it becomes easy. Most scholarships in India are applied through government portals like NSP or PFMS, or directly on private organisation websites.</p>
+        <p>Always read the eligibility criteria carefully before applying. Make sure you qualify before spending time on the application.</p>
+      </div>
+      <div class="step-grid">
+        <div class="step-card"><div class="step-num">1</div><h3>Search Your Scholarship</h3><p>Use Scholly India's search and filter feature to find scholarships matching your category, course, income, and academics.</p></div>
+        <div class="step-card"><div class="step-num">2</div><h3>Check Eligibility</h3><p>Read details carefully — eligible categories, minimum academic %, max family income, and eligible courses.</p></div>
+        <div class="step-card"><div class="step-num">3</div><h3>Gather Documents</h3><p>Collect all required documents in advance — income certificate, caste certificate, marksheets, Aadhaar, bank details etc.</p></div>
+        <div class="step-card"><div class="step-num">4</div><h3>Register on Portal</h3><p>Visit the official scholarship portal (NSP, PFMS, or organisation website). Create account using Aadhaar or mobile number.</p></div>
+        <div class="step-card"><div class="step-num">5</div><h3>Fill Application Form</h3><p>Fill all details carefully — personal info, academic records, bank account details. Double-check before submitting.</p></div>
+        <div class="step-card"><div class="step-num">6</div><h3>Upload Documents</h3><p>Upload scanned copies of all required documents. Files must be clear and within the allowed size (usually under 200KB).</p></div>
+        <div class="step-card"><div class="step-num">7</div><h3>Submit & Take Printout</h3><p>Submit the form and download the acknowledgement slip. Keep your application number safe for tracking.</p></div>
+        <div class="step-card"><div class="step-num">8</div><h3>Track Application</h3><p>Log in periodically to check your status. Respond promptly to any requests for additional documents.</p></div>
+      </div>
+      <div class="info-card" style="margin-top:32px; border-left-color:#f5c842;">
+        <h2><span>💡</span> Pro Tips</h2>
+        <ul>
+          <li>Apply as early as possible — don't wait for the last day.</li>
+          <li>Keep soft copies of all documents ready on your phone/email.</li>
+          <li>Never pay any fee to apply for a government scholarship — it is always FREE.</li>
+          <li>Make sure your bank account is linked with Aadhaar for Direct Benefit Transfer (DBT).</li>
+          <li>If applying on NSP, get your application verified by your institute's nodal officer.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer><div class="footer-bottom" style="border-top:none;padding-top:0"><span>© 2026 Scholly India.</span><a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a></div></footer>
+</div>
+
+<!-- ===================== PAGE: DOCUMENTS ===================== -->
+<div class="page" id="page-documents">
+  <div class="info-page-hero">
+    <span class="page-icon">📂</span>
+    <h1>Documents Required</h1>
+    <p>Keep these documents ready before applying for any scholarship in India.</p>
+  </div>
+  <div class="info-page-body">
+    <div class="container">
+      <button class="back-btn" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+      <div class="info-card">
+        <h2><span>📋</span> Why Documents Matter</h2>
+        <p>Scholarship applications require proof of identity, academic performance, income, and category. Preparing documents in advance will save time and prevent rejection. Keep both originals and scanned copies.</p>
+      </div>
+      <div class="doc-grid">
+        <div class="doc-item"><div class="doc-icon">🪪</div><div><h4>Aadhaar Card</h4><p>Mandatory identity proof for all government scholarships</p></div></div>
+        <div class="doc-item"><div class="doc-icon">📸</div><div><h4>Passport Size Photo</h4><p>Recent photograph with white background (JPEG, &lt;100KB)</p></div></div>
+        <div class="doc-item"><div class="doc-icon">🏫</div><div><h4>10th Marksheet</h4><p>Board marksheet as proof of secondary qualification</p></div></div>
+        <div class="doc-item"><div class="doc-icon">🎓</div><div><h4>12th Marksheet</h4><p>Required for undergraduate scholarships</p></div></div>
+        <div class="doc-item"><div class="doc-icon">📜</div><div><h4>Caste Certificate</h4><p>For SC, ST, OBC, EWS category (issued by Tehsildar)</p></div></div>
+        <div class="doc-item"><div class="doc-icon">💰</div><div><h4>Income Certificate</h4><p>Family income proof issued by Revenue Officer/Tehsildar</p></div></div>
+        <div class="doc-item"><div class="doc-icon">🏦</div><div><h4>Bank Passbook</h4><p>Account in student's name, linked with Aadhaar</p></div></div>
+        <div class="doc-item"><div class="doc-icon">🏛️</div><div><h4>Institute Bonafide</h4><p>Certificate from college confirming enrollment</p></div></div>
+        <div class="doc-item"><div class="doc-icon">📱</div><div><h4>Mobile Number</h4><p>Active mobile linked with Aadhaar for OTP</p></div></div>
+        <div class="doc-item"><div class="doc-icon">📧</div><div><h4>Email Address</h4><p>Valid email for receiving updates</p></div></div>
+        <div class="doc-item"><div class="doc-icon">🏠</div><div><h4>Domicile Certificate</h4><p>Proof of state residence — needed for state scholarships</p></div></div>
+        <div class="doc-item"><div class="doc-icon">♿</div><div><h4>Disability Certificate</h4><p>If applying under PwD category (issued by CMO)</p></div></div>
+      </div>
+      <div class="info-card" style="margin-top:28px; border-left-color:#2563eb;">
+        <h2><span>⚙️</span> Document Scan Tips</h2>
+        <ul>
+          <li>Scan all documents at 200 DPI — good clarity, small file size.</li>
+          <li>Most portals accept PDF or JPEG format only.</li>
+          <li>Maximum file size is usually 200KB per document.</li>
+          <li>Ensure text is fully visible — no shadows or cut-off corners.</li>
+          <li>Keep a Google Drive folder with all documents for easy access.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer><div class="footer-bottom" style="border-top:none;padding-top:0"><span>© 2026 Scholly India.</span><a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a></div></footer>
+</div>
+
+<!-- ===================== PAGE: NSP ===================== -->
+<div class="page" id="page-nsp">
+  <div class="info-page-hero">
+    <span class="page-icon">🏛️</span>
+    <h1>National Scholarship Portal (NSP)</h1>
+    <p>India's largest scholarship platform — managed by the Government of India for students from pre-matric to PhD level.</p>
+  </div>
+  <div class="info-page-body">
+    <div class="container">
+      <button class="back-btn" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+      <div class="portal-card">
+        <div class="portal-logo">🏛️</div>
+        <div class="portal-info">
+          <h2>National Scholarship Portal (NSP)</h2>
+          <p>NSP is the One-Stop solution for end-to-end scholarship process for students from pre-matric to PhD level. It covers scholarships from Central Ministries like Minority Affairs, Social Justice, Tribal Affairs, Labour, and more.</p>
+          <p>NSP is the official Government of India portal under MeitY. It ensures timely disbursement directly to student bank accounts via DBT.</p>
+          <a href="https://scholarships.gov.in" target="_blank" class="portal-link"><i class="fas fa-external-link-alt"></i> Visit NSP Portal</a>
+        </div>
+      </div>
+      <div class="info-card">
+        <h2><span>📋</span> Scholarships Available on NSP</h2>
+        <ul>
+          <li><strong>Pre-Matric Scholarship</strong> — For SC/ST/OBC/Minority students in Class 9-10</li>
+          <li><strong>Post-Matric Scholarship</strong> — For SC/ST/OBC/Minority students in Class 11 and above</li>
+          <li><strong>Merit-cum-Means Scholarship</strong> — For Minority students in professional & technical courses</li>
+          <li><strong>Top Class Education Scholarship</strong> — For SC students in top-rated institutions</li>
+          <li><strong>National Fellowship</strong> — For SC/ST PhD scholars</li>
+          <li><strong>Pragati & Saksham</strong> — AICTE scholarships for girl students in technical education</li>
+        </ul>
+      </div>
+      <div class="info-card" style="border-left-color:#059669;">
+        <h2><span>✅</span> How to Register on NSP</h2>
+        <ul>
+          <li>Visit <strong>scholarships.gov.in</strong> and click "New Registration"</li>
+          <li>Select your state, scholarship type, and provide Aadhaar details</li>
+          <li>Verify mobile OTP and create your login credentials</li>
+          <li>Fill in the application form with your academic and personal details</li>
+          <li>Upload required documents and submit</li>
+          <li>Get the application verified by your institute's nodal officer</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer><div class="footer-bottom" style="border-top:none;padding-top:0"><span>© 2026 Scholly India.</span><a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a></div></footer>
+</div>
+
+<!-- ===================== PAGE: PFMS ===================== -->
+<div class="page" id="page-pfms">
+  <div class="info-page-hero">
+    <span class="page-icon">💳</span>
+    <h1>PFMS – Public Financial Management System</h1>
+    <p>The Government of India's unified payment platform for direct benefit transfers to students.</p>
+  </div>
+  <div class="info-page-body">
+    <div class="container">
+      <button class="back-btn" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+      <div class="portal-card">
+        <div class="portal-logo">💳</div>
+        <div class="portal-info">
+          <h2>PFMS Portal</h2>
+          <p>PFMS (Public Financial Management System) is operated by the Controller General of Accounts, Ministry of Finance. It is used for payment of scholarships directly to students' bank accounts through Direct Benefit Transfer (DBT).</p>
+          <p>If your scholarship amount is being credited via PFMS, you can track your payment status using your bank account number or NSP application number.</p>
+          <a href="https://pfms.nic.in" target="_blank" class="portal-link"><i class="fas fa-external-link-alt"></i> Visit PFMS Portal</a>
+        </div>
+      </div>
+      <div class="info-card">
+        <h2><span>🔍</span> How to Track Payment on PFMS</h2>
+        <ul>
+          <li>Visit <strong>pfms.nic.in</strong></li>
+          <li>Click on <strong>"Know Your Payment"</strong></li>
+          <li>Select your bank and enter your bank account number</li>
+          <li>Enter the captcha and click "Search"</li>
+          <li>You will see all DBT payments received in your account</li>
+        </ul>
+      </div>
+      <div class="info-card" style="border-left-color:#f5c842;">
+        <h2><span>⚠️</span> Important Notes</h2>
+        <ul>
+          <li>Your bank account must be linked with Aadhaar for DBT to work.</li>
+          <li>Only one bank account can be registered per Aadhaar — make sure it is active.</li>
+          <li>If payment is pending, contact your district nodal officer or NIC helpdesk.</li>
+          <li>PFMS helpline: <strong>1800-111-555</strong> (Toll Free)</li>
+          <li>Contact: <strong><a href="#page-contact" onclick="showPage('contact');return false;">Contact form</a></strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer><div class="footer-bottom" style="border-top:none;padding-top:0"><span>© 2026 Scholly India.</span><a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a></div></footer>
+</div>
+
+<!-- ===================== PAGE: ABOUT ===================== -->
+<div class="page" id="page-about">
+  <div class="info-page-hero">
+    <span class="page-icon">🎓</span>
+    <h1>About Scholly India</h1>
+    <p>India's most comprehensive and student-friendly scholarship discovery platform.</p>
+  </div>
+  <div class="info-page-body">
+    <div class="container">
+      <button class="back-btn" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+      <div class="info-card">
+        <h2><span>🌟</span> Our Mission</h2>
+        <p>Scholly India was built with one mission — <strong>no deserving student should miss a scholarship just because they didn't know it existed.</strong></p>
+        <p>We aggregate hundreds of scholarships from Central Government, State Governments, and Private Organisations and present them in a searchable, filterable, student-friendly interface — completely free of cost.</p>
+      </div>
+      <div class="info-card" style="border-left-color:#2563eb;">
+        <h2><span>📖</span> Our Story</h2>
+        <p>Scholly India started as a college project with a simple goal: make scholarship information accessible to every Indian student regardless of their background, state, or category.</p>
+        <p>We believe financial constraints should never be a barrier to education. Every year, thousands of crores worth of scholarships go unclaimed in India simply because students are unaware. Scholly India bridges that gap.</p>
+      </div>
+      <div class="info-card" style="border-left-color:#059669;">
+        <h2><span>🏆</span> What We Offer</h2>
+        <ul>
+          <li>Curated database of scholarships — National, State-level and Private</li>
+          <li>Smart search with multiple filters — category, course, income, academic %</li>
+          <li>Direct application links to official portals</li>
+          <li>Guides on how to apply, documents needed, NSP and PFMS portals</li>
+          <li>Mobile-friendly design accessible on any device</li>
+          <li>100% free — no registration, no ads, no hidden charges</li>
+        </ul>
+      </div>
+      <div class="info-card" style="border-left-color:var(--gold);">
+        <h2><span>💡</span> Our Values</h2>
+        <ul>
+          <li><strong>Accessibility:</strong> Every student deserves to know their options.</li>
+          <li><strong>Accuracy:</strong> We verify data before listing any scholarship.</li>
+          <li><strong>Transparency:</strong> We don't charge students anything, ever.</li>
+          <li><strong>Simplicity:</strong> Complex government info, made easy to understand.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer><div class="footer-bottom" style="border-top:none;padding-top:0"><span>© 2026 Scholly India.</span><a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a></div></footer>
+</div>
+
+<!-- ===================== PAGE: CONTACT ===================== -->
+<div class="page" id="page-contact">
+  <div class="info-page-hero">
+    <span class="page-icon">📬</span>
+    <h1>Contact Us</h1>
+    <p>Have a question, suggestion, or found incorrect information? Reach out to us!</p>
+  </div>
+  <div class="info-page-body">
+    <div class="container">
+      <button class="back-btn" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+      <div class="contact-grid">
+        <div class="contact-info-card">
+          <h3>📞 Get in Touch</h3>
+          <div class="contact-row"><div class="contact-icon"><i class="fas fa-envelope"></i></div><div><div class="contact-label">Email</div><div class="contact-value">Contact email not configured</div></div></div>
+          <div class="contact-row"><div class="contact-icon"><i class="fas fa-clock"></i></div><div><div class="contact-label">Response Time</div><div class="contact-value">Within 24–48 hours</div></div></div>
+          
+        </div>
+        <div class="contact-info-card">
+          <h3>❓ Frequently Asked Questions</h3>
+          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--light-gray);">
+            <p style="font-weight:700;color:var(--navy);margin-bottom:6px;font-size:14px;">Is Scholly India free to use?</p>
+            <p style="color:var(--gray);font-size:14px;">Yes, completely free. No registration required to search or view scholarships.</p>
+          </div>
+          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--light-gray);">
+            <p style="font-weight:700;color:var(--navy);margin-bottom:6px;font-size:14px;">Can I apply directly through Scholly India?</p>
+            <p style="color:var(--gray);font-size:14px;">No — we provide the direct link to the official portal. Applications are always on the official website.</p>
+          </div>
+          <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--light-gray);">
+            <p style="font-weight:700;color:var(--navy);margin-bottom:6px;font-size:14px;">I found incorrect information in a listing.</p>
+            <p style="color:var(--gray);font-size:14px;">Use the contact section to report the scholarship name and correction needed.</p>
+          </div>
+          <div>
+            <p style="font-weight:700;color:var(--navy);margin-bottom:6px;font-size:14px;">How do I suggest a new scholarship?</p>
+            <p style="color:var(--gray);font-size:14px;">Email us the scholarship name, link, and details — we'll verify and add it to our database.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer><div class="footer-bottom" style="border-top:none;padding-top:0"><span>© 2026 Scholly India.</span><a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a></div></footer>
+</div>
+
+<!-- ===================== PAGE: PRIVACY ===================== -->
+<div class="page" id="page-privacy">
+  <div class="info-page-hero">
+    <span class="page-icon">🔒</span>
+    <h1>Privacy Policy</h1>
+    <p>Last updated: January 2026 | We are committed to protecting your privacy.</p>
+  </div>
+  <div class="info-page-body">
+    <div class="container">
+      <button class="back-btn" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+      <div class="info-card">
+        <h2><span>ℹ️</span> Overview</h2>
+        <p>Scholly India is a scholarship discovery platform. This Privacy Policy explains what information we collect, how we use it, and how we protect it. By using Scholly India, you agree to this policy.</p>
+      </div>
+      <div class="info-card">
+        <h2><span>📊</span> Information We Collect</h2>
+        <p><strong>We do not require user registration</strong> to use Scholly India. We collect minimal, anonymous information:</p>
+        <ul>
+          <li><strong>Usage Data:</strong> Anonymous data about pages visited — collected via analytics tools.</li>
+          <li><strong>Search Queries:</strong> Search terms may be logged anonymously to improve search functionality.</li>
+          <li><strong>Contact Info:</strong> If you email us, we collect your email address only to respond to your query.</li>
+        </ul>
+        <p>We do <strong>not</strong> collect Aadhaar numbers, financial information, or any sensitive personal data.</p>
+      </div>
+      <div class="info-card" style="border-left-color:#2563eb;">
+        <h2><span>🎯</span> How We Use Information</h2>
+        <ul>
+          <li>To improve the functionality and content of Scholly India</li>
+          <li>To respond to your emails and support requests</li>
+          <li>We do <strong>not</strong> sell, trade, or share your data with third parties for marketing</li>
+        </ul>
+      </div>
+      <div class="info-card" style="border-left-color:#059669;">
+        <h2><span>🔗</span> Third-Party Links</h2>
+        <p>Scholly India contains links to external websites (NSP, PFMS, scholarship portals). We are not responsible for the privacy practices of these external sites. Once you leave Scholly India, this Privacy Policy no longer applies.</p>
+      </div>
+      <div class="info-card" style="border-left-color:var(--gold);">
+        <h2><span>📧</span> Contact for Privacy</h2>
+        <p>Questions about this Privacy Policy? <strong><a href="#page-contact" onclick="showPage('contact');return false;">Contact us</a></strong></p>
+      </div>
+    </div>
+  </div>
+  <footer><div class="footer-bottom" style="border-top:none;padding-top:0"><span>© 2026 Scholly India.</span><a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a></div></footer>
+</div>
+
+<!-- ===================== PAGE: DISCLAIMER ===================== -->
+<div class="page" id="page-disclaimer">
+  <div class="info-page-hero">
+    <span class="page-icon">⚠️</span>
+    <h1>Disclaimer</h1>
+    <p>Please read this disclaimer carefully before using information provided on Scholly India.</p>
+  </div>
+  <div class="info-page-body">
+    <div class="container">
+      <button class="back-btn" onclick="showPage('landing')"><i class="fas fa-arrow-left"></i> Back to Home</button>
+      <div class="info-card">
+        <h2><span>📢</span> General Disclaimer</h2>
+        <p>Scholly India is an <strong>independent scholarship discovery platform</strong>. We are not affiliated with, endorsed by, or associated with any government ministry, the NSP, PFMS, or any private scholarship-providing organisation.</p>
+        <p>The information on this website is compiled from publicly available sources and is intended for <strong>informational and educational purposes only</strong>.</p>
+      </div>
+      <div class="info-card" style="border-left-color:#e53e3e;">
+        <h2><span>❗</span> Accuracy of Information</h2>
+        <p>While we make every effort to keep information accurate and up to date, scholarship details including amounts, deadlines, eligibility, and application links are <strong>subject to change without notice</strong>.</p>
+        <p>Scholly India does <strong>not guarantee</strong> accuracy of any listed information. Always verify on the <strong>official scholarship portal</strong> before applying.</p>
+      </div>
+      <div class="info-card" style="border-left-color:#f5c842;">
+        <h2><span>🚫</span> No Application Processing</h2>
+        <p>Scholly India is a <strong>discovery platform only</strong>. We do not process applications, collect student documents, or disburse scholarship amounts. All applications must be submitted on official portals.</p>
+        <p>If anyone claims to process applications on behalf of Scholly India and asks for money — do not engage. <strong>Government scholarships are always FREE to apply.</strong></p>
+      </div>
+      <div class="info-card" style="border-left-color:#059669;">
+        <h2><span>📬</span> Report Incorrect Information</h2>
+        <p>If you notice any outdated or incorrect information, please report it at <strong>support@schollyindia.in</strong>. We will review and update it promptly.</p>
+      </div>
+    </div>
+  </div>
+  <footer><div class="footer-bottom" style="border-top:none;padding-top:0"><span>© 2026 Scholly India.</span><a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a></div></footer>
+</div>
+<script src="style.js"></script>
+
+</body>
+</html>
