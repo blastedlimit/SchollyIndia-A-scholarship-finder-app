@@ -1,15 +1,16 @@
 import express from 'express';
 import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 // Load this Node built-in at runtime so Netlify's bundler doesn't rewrite
 // `node:sqlite` to a nonexistent npm package named `sqlite`.
-const require = createRequire(import.meta.url);
+const require = createRequire(join(process.cwd(), 'package.json'));
 const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
-const publicDir = fileURLToPath(new URL('./public/', import.meta.url));
-const databasePath = fileURLToPath(new URL('./data/scholly.sqlite', import.meta.url));
+const projectDir = process.cwd();
+const publicDir = join(projectDir, 'public');
+const databasePath = join(projectDir, 'data', 'scholly.sqlite');
 const database = new DatabaseSync(databasePath, { readOnly: true });
 const allScholarships = database.prepare(`
   SELECT scholarship_name, provider_name, scholarship_type, target_state,
