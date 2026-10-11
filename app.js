@@ -1,6 +1,11 @@
 import express from 'express';
-import { DatabaseSync } from 'node:sqlite';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+
+// Load this Node built-in at runtime so Netlify's bundler doesn't rewrite
+// `node:sqlite` to a nonexistent npm package named `sqlite`.
+const require = createRequire(import.meta.url);
+const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
 const publicDir = fileURLToPath(new URL('./public/', import.meta.url));
