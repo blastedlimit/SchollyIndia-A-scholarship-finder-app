@@ -38,48 +38,41 @@
     if (id === 'search') document.getElementById('nav-search')?.classList.add('active');
   }
 
-  function goToSearch() {
+  async function goToSearch() {
     showPage('search');
     if (allScholarships.length === 0) {
-      loadSearchData();
+      await loadSearchData();
     } else {
-      filteredData = [...allScholarships];
-      renderCards(allScholarships);
+      clearFilters();
     }
   }
 
-  function filterByCategory(cat) {
-    goToSearch();
-    setTimeout(() => {
-      // Special case: Engineering category click from landing
-      if (cat.toLowerCase() === 'engineering') {
-        document.getElementById('f-course').value = 'engineering';
-        document.getElementById('f-category').value = '';
-        applyFilters();
-        return;
-      }
-      const sel = document.getElementById('f-category');
-      let found = false;
-      for (let opt of sel.options) {
-        if (cat.toLowerCase().includes(opt.value.toLowerCase()) ||
-            opt.value.toLowerCase().includes(cat.toLowerCase())) {
-          sel.value = opt.value;
-          found = true;
-          break;
-        }
-      }
-      if (!found) sel.value = '';
-      applyFilters();
-    }, 120);
+  async function filterByCategory(cat) {
+    await goToSearch();
+    const normalized = cat.trim().toLowerCase();
+    const course = document.getElementById('f-course');
+    const category = document.getElementById('f-category');
+    document.getElementById('search-input').value = '';
+    document.getElementById('f-deadline').value = '';
+    document.getElementById('f-income').value = '';
+    document.getElementById('f-percent').value = '';
+    document.getElementById('sort-select').value = 'name';
+
+    if (normalized === 'engineering' || normalized === 'medical') {
+      course.value = normalized;
+      category.value = '';
+    } else {
+      course.value = '';
+      category.value = normalized === 'sc/st' ? 'SC/ST' : cat;
+    }
+    applyFilters();
   }
 
-  function heroSearch() {
+  async function heroSearch() {
     const q = document.getElementById('hero-search-input').value.trim();
-    goToSearch();
-    setTimeout(() => {
-      document.getElementById('search-input').value = q;
-      applyFilters();
-    }, 100);
+    await goToSearch();
+    document.getElementById('search-input').value = q;
+    applyFilters();
   }
 
   /* ===== LOAD DATA ===== */
@@ -122,90 +115,84 @@
   }
 
   /* ===== FILTERS & RENDERING ===== */
-  function applyFilters() {
-    const q      = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
-    const cat    = (document.getElementById('f-category')?.value || '').toLowerCase();
-    const course = (document.getElementById('f-course')?.value || '');
-    const ddl    = (document.getElementById('f-deadline')?.value || '').toLowerCase();
-    const income = parseFloat(document.getElementById('f-income')?.value) || Infinity;
-    const myPct  = parseFloat(document.getElementById('f-percent')?.value) || 0;
-    const sort   = document.getElementById('sort-select')?.value || 'name';
+  function courseMatches(s, selectedCourse) {
+    const courseText = (s.eligible_courses || '').toLowerCase();
+    const matchers = {
+      engineering: /b\.?\s*tech|btech|(?:^|[^a-z])b\.?\s*e(?:[^a-z]|$)|engineering|technology|\btech\b/i,
+      medical: /\b(mbbs|medical|nursing|pharmacy|bds|dental)\b/i,
+      arts: /\b(arts?|humanities|social sciences?|general degree|other ug)\b/i,
+      science: /\b(b\.?\s*sc|bsc|science|stem|integrated\s*msc|general degree|other ug)\b/i,
+      commerce: /\b(b\.?\s*com|bcom|commerce|accountancy|general degree|other ug)\b/i,
+      law: /\b(law|llb|legal)\b/i,
+      management: /\b(mba|management|business administration|professional ug|other professional)\b/i,
+      iti: /\b(iti|diploma|polytechnic|vocational)\b/i,
+      pg: /\b(post[\s-]?graduate|masters?|m\.?\s*sc|m\.?\s*tech|m\.?\s*com|mba|pg)\b/i,
+      phd: /\b(ph\.?d|research|doctorate)\b/i
+    };
+    return Boolean(matchers[selectedCourse]?.test(courseText));
+  }
 
-    // If user selected a "coming soon" course — show friendly message
-    if (course.startsWith('__nodata__')) {
-      const courseName = course.replace('__nodata__', '');
-      const label = document.querySelector(`#f-course option[value="${course}"]`)?.text || courseName;
-      document.getElementById('result-count').textContent = '0';
-      document.getElementById('cards-container').innerHTML = `
-        <div class="empty-state" style="grid-column:1/-1">
-          <div class="empty-icon">🚧</div>
-          <h3>Coming Soon — ${label}</h3>
-          <p style="max-width:420px;margin:0 auto 20px;">We're currently focused on <strong>Engineering scholarships</strong>. Scholarships for <strong>${label}</strong> will be added very soon. Stay tuned!</p>
-          <button onclick="document.getElementById('f-course').value='';applyFilters()" style="background:linear-gradient(135deg,var(--orange),var(--orange-light));color:white;border:none;padding:12px 28px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">
-            <i class="fas fa-search"></i> Show All Engineering Scholarships
-          </button>
-        </div>`;
-      return;
+  function categoryMatches(s, selectedCategory) {
+    const categories = (s.eligible_categories || '').split(/[;,]/).map(value => value.trim().toLowerCase());
+    const gender = (s.target_gender || '').trim().toLowerCase();
+    const name = (s.scholarship_name || '').toLowerCase();
+    const allEligible = categories.includes('all');
+
+    if (selectedCategory === 'sc/st') return allEligible || categories.some(value => value === 'sc' || value === 'st');
+    if (selectedCategory === 'girls') return gender === 'female' || allEligible || categories.some(value => ['female', 'girls', 'women'].includes(value));
+    if (selectedCategory === 'merit') return name.includes('merit') || Number(s.min_academic_percentage) > 0;
+    if (selectedCategory === 'minority') {
+      return allEligible || categories.some(value => ['minority', 'muslim', 'christian', 'sikh', 'buddhist', 'neo-buddhist', 'jain', 'parsi', 'zoroastrian'].includes(value));
     }
+    if (selectedCategory === 'general') return allEligible || categories.includes('general') || categories.includes('ews');
+    return allEligible || categories.includes(selectedCategory);
+  }
 
-    // Engineering keywords — matches semicolon-separated field like "B.Tech; BE; B.Tech Computer Science"
-    const ENGG_KEYWORDS = ['b.tech','btech','be','b.e','engineering','bachelor of technology','bachelor of engineering'];
+  function applyFilters() {
+    const q = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+    const cat = (document.getElementById('f-category')?.value || '').trim().toLowerCase();
+    const course = document.getElementById('f-course')?.value || '';
+    const deadline = (document.getElementById('f-deadline')?.value || '').trim().toLowerCase();
+    const incomeValue = document.getElementById('f-income')?.value ?? '';
+    const income = incomeValue === '' ? null : Number(incomeValue);
+    const percentValue = document.getElementById('f-percent')?.value ?? '';
+    const myPct = percentValue === '' ? null : Number(percentValue);
+    const sort = document.getElementById('sort-select')?.value || 'name';
 
     let data = allScholarships.filter(s => {
-      // Smart search — matches name, categories, courses, provider
       if (q) {
         const haystack = [
-          s.scholarship_name, s.provider_name, s.eligible_categories,
-          s.eligible_courses, s.reward_amount_text, s.scholarship_type
-        ].map(v => (v || '').toLowerCase()).join(' ');
-        // Support multi-word: every word must match somewhere
-        const words = q.split(/\s+/).filter(Boolean);
-        if (!words.every(w => haystack.includes(w))) return false;
+          s.scholarship_name, s.provider_name, s.eligible_categories, s.eligible_courses,
+          s.reward_amount_text, s.scholarship_type, s.target_state, s.target_gender, s.deadline_month
+        ].map(value => (value || '').toLowerCase()).join(' ');
+        if (!q.split(/\s+/).filter(Boolean).every(word => haystack.includes(word))) return false;
       }
-
-      // Category filter — semicolon or comma separated
-      if (cat) {
-        const catField = (s.eligible_categories || '').toLowerCase();
-        // "All" in the field means everyone is eligible
-        if (!catField.includes('all') && !catField.includes(cat)) return false;
-      }
-
-      // Course filter — engineering only option
-      if (course === 'engineering') {
-        const courseField = (s.eligible_courses || '').toLowerCase();
-        const matchesEngg = ENGG_KEYWORDS.some(k => courseField.includes(k));
-        if (!matchesEngg) return false;
-      }
-
-      // Deadline month
-      if (ddl && !(s.deadline_month || '').toLowerCase().includes(ddl)) return false;
-
-      // Income filter — show scholarships where max_family_income >= user's income (user is eligible)
-      if (income < Infinity && s.max_family_income_inr) {
-        if (parseFloat(s.max_family_income_inr) < income) return false;
-      }
-
-      // Academics filter — show scholarships where min% <= my%
-      if (myPct > 0 && s.min_academic_percentage) {
-        if (parseFloat(s.min_academic_percentage) > myPct) return false;
-      }
-
+      if (cat && !categoryMatches(s, cat)) return false;
+      if (course && !courseMatches(s, course)) return false;
+      if (deadline && !(s.deadline_month || '').toLowerCase().includes(deadline)) return false;
+      if (income !== null && Number.isFinite(income) && s.max_family_income_inr !== null && s.max_family_income_inr !== '' && Number(s.max_family_income_inr) < income) return false;
+      if (myPct !== null && Number.isFinite(myPct) && s.min_academic_percentage !== null && s.min_academic_percentage !== '' && Number(s.min_academic_percentage) > myPct) return false;
       return true;
     });
 
-    // Sort
-    if (sort === 'name') data.sort((a,b) => (a.scholarship_name||'').localeCompare(b.scholarship_name||''));
-    else if (sort === 'amount') data.sort((a,b) => {
-      const aNum = parseFloat((a.reward_amount_text||'').replace(/[^0-9.]/g,'')) || 0;
-      const bNum = parseFloat((b.reward_amount_text||'').replace(/[^0-9.]/g,'')) || 0;
-      return bNum - aNum;
+    if (sort === 'name') data.sort((a, b) => (a.scholarship_name || '').localeCompare(b.scholarship_name || ''));
+    else if (sort === 'amount') data.sort((a, b) => {
+      const amount = value => parseFloat((value || '').replace(/[^0-9.]/g, '')) || 0;
+      return amount(b.reward_amount_text) - amount(a.reward_amount_text);
     });
     else if (sort === 'deadline') {
-      const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
-      data.sort((a,b) => {
-        const ai = months.indexOf((a.deadline_month||'').toLowerCase());
-        const bi = months.indexOf((b.deadline_month||'').toLowerCase());
-        return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+      const months = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+      const deadlineKey = value => {
+        const text = (value || '').toLowerCase();
+        const month = months.findIndex(name => text.includes(name));
+        if (month < 0) return [9999, 99];
+        const year = Number(text.match(/\b20\d{2}\b/)?.[0]) || new Date().getFullYear();
+        return [year, month];
+      };
+      data.sort((a, b) => {
+        const [yearA, monthA] = deadlineKey(a.deadline_month);
+        const [yearB, monthB] = deadlineKey(b.deadline_month);
+        return yearA - yearB || monthA - monthB;
       });
     }
 
@@ -220,6 +207,7 @@
     document.getElementById('f-deadline').value = '';
     document.getElementById('f-income').value = '';
     document.getElementById('f-percent').value = '';
+    document.getElementById('sort-select').value = 'name';
     filteredData = [...allScholarships];
     renderCards(allScholarships);
   }

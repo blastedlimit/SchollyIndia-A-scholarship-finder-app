@@ -236,6 +236,7 @@
         <div class="filter-select-wrap">
           <select id="f-category" onchange="applyFilters()">
             <option value="">All Categories</option>
+            <option value="SC/ST">SC/ST</option>
             <option>SC</option><option>ST</option><option>OBC</option>
             <option>Minority</option><option>General</option>
             <option>Girls</option><option>EWS</option><option>Merit</option>
@@ -248,19 +249,19 @@
         <div class="filter-select-wrap">
           <select id="f-course" onchange="applyFilters()">
             <option value="">All Courses</option>
-            <optgroup label="✅ Available">
+            <optgroup label="Available">
               <option value="engineering">Engineering / B.Tech / BE</option>
+              <option value="medical">Medical / MBBS</option>
             </optgroup>
-            <optgroup label="⚠️ Coming Soon">
-              <option value="__nodata__medical">Medical / MBBS</option>
-              <option value="__nodata__arts">Arts / Humanities</option>
-              <option value="__nodata__science">Science / B.Sc</option>
-              <option value="__nodata__commerce">Commerce / B.Com</option>
-              <option value="__nodata__law">Law / LLB</option>
-              <option value="__nodata__management">Management / MBA</option>
-              <option value="__nodata__iti">ITI / Diploma</option>
-              <option value="__nodata__pg">Post Graduate</option>
-              <option value="__nodata__phd">PhD / Research</option>
+            <optgroup label="Other Courses">
+              <option value="arts">Arts / Humanities</option>
+              <option value="science">Science / B.Sc</option>
+              <option value="commerce">Commerce / B.Com</option>
+              <option value="law">Law / LLB</option>
+              <option value="management">Management / MBA</option>
+              <option value="iti">ITI / Diploma</option>
+              <option value="pg">Post Graduate</option>
+              <option value="phd">PhD / Research</option>
             </optgroup>
           </select>
         </div>
