@@ -6,12 +6,11 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "seed": "node scripts/import-scholarships.js"
   },
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=24" },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.0",
-    "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "serverless-http": "^3.2.0"
   }

@@ -1,45 +1,21 @@
 # Scholly India
 
-Scholarship discovery site backed by a Node.js/Express API and Supabase.
+Scholarship search app with an Express API and a local SQLite database. The database is seeded from the included CSV and contains 122 scholarship records.
 
 ## Run locally
 
-1. Install Node.js 20 or newer.
+1. Install Node.js 24 or newer.
 2. Run `npm install` in this folder.
-3. Copy `.env.example` to `.env` and set `SUPABASE_URL` and `SUPABASE_ANON_KEY` from your Supabase project settings.
-4. Run `npm run dev` and open `http://localhost:3000`.
+3. Run `npm run dev` and open `http://localhost:3000`.
 
-The browser requests scholarship data from `/api/scholarships`; Supabase credentials are read by the server from `.env` and are not embedded in the frontend. The health endpoint is `/api/health`.
+The API is available at `/api/scholarships`; `/api/health` reports the database status and record count. Supabase is not used and no database credentials are required.
 
-## Supabase table
+## Scholarship database
 
-The existing `Scholarships` table should expose these columns (names are case-sensitive where your database requires it):
+`data/scholly.sqlite` is the SQLite database read by the app. `data/scholarships.csv` is the source data. To refresh the database after editing the CSV, run `npm run seed`, then commit the updated CSV and SQLite file.
 
-| Column | Suggested type |
-| --- | --- |
-| scholarship_name | text |
-| provider_name | text |
-| scholarship_type | text |
-| target_state | text |
-| target_gender | text |
-| eligible_categories | text |
-| eligible_courses | text |
-| max_family_income_inr | numeric |
-| min_academic_percentage | numeric |
-| reward_amount_text | text |
-| deadline_month | text |
-| application_link | text |
+The app opens the SQLite file read-only. On Netlify the database is packaged with the function, so scholarship data changes take effect after rebuilding and redeploying. This project does not provide a live admin editor or persistent database writes.
 
-For public scholarship browsing, enable Row Level Security and add a SELECT policy for `anon` on this table. Keep write access restricted to trusted administrators. The application uses the publishable/anon key on the server, so the database policy remains the access boundary. Never put a service role key in the browser or commit `.env`.
+## Deploy to Netlify
 
-## CSV data
-
-The supplied CSV has matching scholarship columns. Import it into the `Scholarships` table using the Supabase Table Editor's CSV import, mapping each column by name. Ensure numeric columns are imported as numbers and application links are text/URLs. The site reads the table live, so imported or edited records appear on the next request.
-
-## Deploy
-
-Deploy this repository to Netlify from GitHub. Netlify uses `public/` for the website, wraps the Express API as a function, and rewrites `/api/*` to that function.
-
-In Netlify, set the publish directory to `public` if it is not read from `netlify.toml`. Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` under Site configuration → Environment variables, then trigger a deploy. Never add `.env` to GitHub.
-
-For local development, run `npm install` and `npm run dev`, then open `http://localhost:3000`.
+Import this repository from GitHub. The included `netlify.toml` sets `public/` as the publish directory, packages the SQLite file with the function, and rewrites `/api/*` requests to the Express function. No Supabase environment variables are needed. Push commits to the production branch to trigger a new deploy.
