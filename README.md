@@ -1,6 +1,6 @@
 # Scholly India
 
-Scholarship search app with an Express API and a local SQLite database. The database is seeded from the included CSV and contains 122 scholarship records.
+Scholarship search app with an Express API and a local SQLite database. The database is seeded from the included CSV and contains 222 scholarship records, including 100 MBBS scholarships.
 
 ## Run locally
 
