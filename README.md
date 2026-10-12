@@ -14,7 +14,7 @@ The API is available at `/api/scholarships`; `/api/health` reports the database 
 
 `data/scholly.sqlite` is the SQLite database read by the app. `data/scholarships.csv` is the source data. To refresh the database after editing the CSV, run `npm run seed`, then commit the updated CSV and SQLite file.
 
-The app opens the SQLite file read-only. On Netlify the database is packaged with the function, so scholarship data changes take effect after rebuilding and redeploying. This project does not provide a live admin editor or persistent database writes.
+The app opens the SQLite file read-only. On Netlify the database is packaged with the function, so scholarship data changes take effect after rebuilding and redeploying. This project does not provide a live admin editor or persistent database writes. Deadlines and eligibility are indicative catalogue data and must be confirmed with the scholarship provider; entries marked `Varies` do not have a dependable date in this dataset. Application-link values may identify a provider homepage rather than a specific application form.
 
 ## Deploy to Netlify
 

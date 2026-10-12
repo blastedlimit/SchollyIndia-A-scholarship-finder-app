@@ -1,14 +1,20 @@
 import express from 'express';
 import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
+
+const moduleDir = dirname(fileURLToPath(import.meta.url));
+const projectDir = existsSync(join(process.cwd(), 'data', 'scholly.sqlite'))
+  ? process.cwd()
+  : moduleDir;
 
 // Load this Node built-in at runtime so Netlify's bundler doesn't rewrite
 // `node:sqlite` to a nonexistent npm package named `sqlite`.
-const require = createRequire(join(process.cwd(), 'package.json'));
+const require = createRequire(join(projectDir, 'package.json'));
 const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
-const projectDir = process.cwd();
 const publicDir = join(projectDir, 'public');
 const databasePath = join(projectDir, 'data', 'scholly.sqlite');
 const database = new DatabaseSync(databasePath, { readOnly: true });
@@ -30,6 +36,10 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/scholarships', (_req, res) => {
   res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
   res.json({ data: allScholarships, count: allScholarships.length });
+});
+
+app.get('/', (_req, res) => {
+  res.sendFile(join(publicDir, 'index.html'));
 });
 
 app.use(express.static(publicDir, { extensions: ['html'] }));

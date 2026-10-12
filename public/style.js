@@ -11,7 +11,9 @@
 
   function getApplicationUrl(value) {
     try {
-      const url = new URL(String(value || ''));
+      let candidate = String(value || '').trim();
+      if (candidate && !/^[a-z][a-z\d+.-]*:/i.test(candidate)) candidate = `https://${candidate}`;
+      const url = new URL(candidate);
       return ['https:', 'http:'].includes(url.protocol) ? url.href : '';
     } catch { return ''; }
   }
@@ -136,16 +138,14 @@
     const categories = (s.eligible_categories || '').split(/[;,]/).map(value => value.trim().toLowerCase());
     const gender = (s.target_gender || '').trim().toLowerCase();
     const name = (s.scholarship_name || '').toLowerCase();
-    const allEligible = categories.includes('all');
-
-    if (selectedCategory === 'sc/st') return allEligible || categories.some(value => value === 'sc' || value === 'st');
-    if (selectedCategory === 'girls') return gender === 'female' || allEligible || categories.some(value => ['female', 'girls', 'women'].includes(value));
+    if (selectedCategory === 'sc/st') return categories.some(value => value === 'sc' || value === 'st');
+    if (selectedCategory === 'girls') return gender === 'female' || categories.some(value => ['female', 'girls', 'women'].includes(value));
     if (selectedCategory === 'merit') return name.includes('merit') || Number(s.min_academic_percentage) > 0;
     if (selectedCategory === 'minority') {
-      return allEligible || categories.some(value => ['minority', 'muslim', 'christian', 'sikh', 'buddhist', 'neo-buddhist', 'jain', 'parsi', 'zoroastrian'].includes(value));
+      return categories.some(value => ['minority', 'muslim', 'christian', 'sikh', 'buddhist', 'neo-buddhist', 'jain', 'parsi', 'zoroastrian'].includes(value));
     }
-    if (selectedCategory === 'general') return allEligible || categories.includes('general') || categories.includes('ews');
-    return allEligible || categories.includes(selectedCategory);
+    if (selectedCategory === 'general') return categories.includes('general') || categories.includes('ews');
+    return categories.includes(selectedCategory);
   }
 
   function applyFilters() {
@@ -170,8 +170,13 @@
       if (cat && !categoryMatches(s, cat)) return false;
       if (course && !courseMatches(s, course)) return false;
       if (deadline && !(s.deadline_month || '').toLowerCase().includes(deadline)) return false;
-      if (income !== null && Number.isFinite(income) && s.max_family_income_inr !== null && s.max_family_income_inr !== '' && Number(s.max_family_income_inr) < income) return false;
-      if (myPct !== null && Number.isFinite(myPct) && s.min_academic_percentage !== null && s.min_academic_percentage !== '' && Number(s.min_academic_percentage) > myPct) return false;
+      const incomeLimit = Number(s.max_family_income_inr);
+      const incomeDescription = (s.reward_amount_text || '').toLowerCase();
+      const hasIncomeLimit = s.max_family_income_inr !== null && s.max_family_income_inr !== '' && Number.isFinite(incomeLimit) && incomeLimit > 0 && incomeLimit < 9999999 && !/income must exceed|income must be above|income above/.test(incomeDescription);
+      if (income !== null && Number.isFinite(income) && hasIncomeLimit && incomeLimit < income) return false;
+      const minimumPercentage = Number(s.min_academic_percentage);
+      const hasMinimumPercentage = s.min_academic_percentage !== null && s.min_academic_percentage !== '' && Number.isFinite(minimumPercentage) && minimumPercentage > 0;
+      if (myPct !== null && Number.isFinite(myPct) && hasMinimumPercentage && minimumPercentage > myPct) return false;
       return true;
     });
 
@@ -186,13 +191,15 @@
         const text = (value || '').toLowerCase();
         const month = months.findIndex(name => text.includes(name));
         if (month < 0) return [9999, 99];
-        const year = Number(text.match(/\b20\d{2}\b/)?.[0]) || new Date().getFullYear();
-        return [year, month];
+        const explicitYear = Number(text.match(/\b20\d{2}\b/)?.[0]);
+        const currentMonth = new Date().getMonth();
+        const year = explicitYear || new Date().getFullYear() + (month < currentMonth ? 1 : 0);
+        return [year, month, explicitYear ? 0 : 1];
       };
       data.sort((a, b) => {
-        const [yearA, monthA] = deadlineKey(a.deadline_month);
-        const [yearB, monthB] = deadlineKey(b.deadline_month);
-        return yearA - yearB || monthA - monthB;
+        const [yearA, monthA, precisionA] = deadlineKey(a.deadline_month);
+        const [yearB, monthB, precisionB] = deadlineKey(b.deadline_month);
+        return yearA - yearB || monthA - monthB || precisionA - precisionB;
       });
     }
 
@@ -257,7 +264,7 @@
         <div class="card-footer">
           <div class="card-deadline">
             <i class="fas fa-calendar"></i>
-            Deadline: ${escapeHtml(s.deadline_month || 'Check portal')}
+            Deadline: ${escapeHtml(s.deadline_month && s.deadline_month.toLowerCase() !== 'varies' ? s.deadline_month : 'Check official portal')}
           </div>
           <button class="view-btn">View Details <i class="fas fa-arrow-right"></i></button>
         </div>
@@ -317,7 +324,7 @@
                 <div class="info-value">${escapeHtml(s.min_academic_percentage)}% or above in qualifying exam</div>
               </div>
             </div>` : ''}
-            ${s.max_family_income_inr ? `
+            ${s.max_family_income_inr && Number(s.max_family_income_inr) < 9999999 ? `
             <div class="info-row">
               <div class="info-icon"><i class="fas fa-rupee-sign"></i></div>
               <div>
@@ -340,7 +347,7 @@
               <div class="info-icon"><i class="fas fa-calendar-alt"></i></div>
               <div>
                 <div class="info-label">Application Deadline Month</div>
-                <div class="info-value">${escapeHtml(s.deadline_month || 'Check official portal for exact dates')}</div>
+                <div class="info-value">${escapeHtml(s.deadline_month && s.deadline_month.toLowerCase() !== 'varies' ? s.deadline_month : 'Check official portal for current dates')}</div>
               </div>
             </div>
           </div>
@@ -379,7 +386,7 @@
             </div>
             <div class="qi-row">
               <span class="qi-label"><i class="fas fa-calendar"></i> Deadline</span>
-              <span class="qi-value">${escapeHtml(s.deadline_month || 'Check portal')}</span>
+              <span class="qi-value">${escapeHtml(s.deadline_month && s.deadline_month.toLowerCase() !== 'varies' ? s.deadline_month : 'Check portal')}</span>
             </div>
             <div class="qi-row">
               <span class="qi-label"><i class="fas fa-percent"></i> Min %</span>
@@ -387,7 +394,7 @@
             </div>
             <div class="qi-row">
               <span class="qi-label"><i class="fas fa-rupee-sign"></i> Income Limit</span>
-              <span class="qi-value">${s.max_family_income_inr ? '₹' + Number(s.max_family_income_inr).toLocaleString('en-IN') : 'No limit'}</span>
+              <span class="qi-value">${s.max_family_income_inr && Number(s.max_family_income_inr) < 9999999 ? '₹' + Number(s.max_family_income_inr).toLocaleString('en-IN') : 'Not specified'}</span>
             </div>
           </div>
         </div>
@@ -405,5 +412,15 @@
 
   /* ===== INIT ===== */
   window.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('contact-form')?.addEventListener('submit', event => {
+      event.preventDefault();
+      const subject = document.getElementById('contact-subject').value.trim();
+      const message = document.getElementById('contact-message').value.trim();
+      const status = document.getElementById('contact-status');
+      if (!subject || !message) return;
+      const mailto = `mailto:blastedlimit@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+      status.textContent = 'Opening your email app to send this message to blastedlimit@gmail.com.';
+      window.location.href = mailto;
+    });
     loadLandingStats();
   });

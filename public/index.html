@@ -3,7 +3,6 @@
 <head>
 <meta name="google-site-verification" content="yUyiVsybWGg0f94nzU_8MfxIffNoQppP9i8qSufcEO8" />
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Scholly India – Find Your Scholarship</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
@@ -35,7 +34,7 @@
     <div class="hero-content">
       <div class="hero-badge"><i class="fas fa-star"></i> India's #1 Scholarship Finder</div>
       <h1>Unlock Your <span>Academic</span> Future Today</h1>
-      <p>Thousands of scholarships from Central Government, State Governments & Private Organisations — all in one place. Don't let finances stop your dreams.</p>
+      <p>Explore a growing collection of scholarships from central and state governments and private organisations. Check each official portal for current details and application dates.</p>
       <div class="hero-search">
         <input type="text" id="hero-search-input" placeholder="Search by scholarship name, course…" onkeydown="if(event.key==='Enter')heroSearch()" />
         <button onclick="heroSearch()"><i class="fas fa-search"></i> Search</button>
@@ -64,8 +63,8 @@
       </div>
       <div class="hero-floating-card hfc-2">
         <div class="hfc-icon">⏰</div>
-        <div class="hfc-label">Applications Open</div>
-        <div class="hfc-value">Apply Now!</div>
+        <div class="hfc-label">Application dates</div>
+        <div class="hfc-value">Check provider portal</div>
       </div>
     </div>
   </section>
@@ -83,8 +82,8 @@
       </div>
       <div class="feature-card">
         <div class="feature-icon">⚡</div>
-        <h3>Real-Time Data</h3>
-        <p>Our database is always up to date. Get the latest scholarship information directly from official sources.</p>
+        <h3>Scholarship Database</h3>
+        <p>Listings are maintained in our scholarship database. Availability, eligibility and dates can change, so confirm details with the official provider.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🏛️</div>
@@ -99,7 +98,7 @@
       <div class="feature-card">
         <div class="feature-icon">🔗</div>
         <h3>Direct Apply Links</h3>
-        <p>No more searching for forms. Every scholarship has a verified direct application link so you can apply instantly.</p>
+        <p>Open the listed provider or application portal from each scholarship. Confirm that the page and current application are official before sharing documents.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🆓</div>
@@ -574,8 +573,15 @@
       <div class="contact-grid">
         <div class="contact-info-card">
           <h3>📞 Get in Touch</h3>
-          <div class="contact-row"><div class="contact-icon"><i class="fas fa-envelope"></i></div><div><div class="contact-label">Email</div><div class="contact-value">Contact email not configured</div></div></div>
-          <div class="contact-row"><div class="contact-icon"><i class="fas fa-clock"></i></div><div><div class="contact-label">Response Time</div><div class="contact-value">Within 24–48 hours</div></div></div>
+          <p style="color:var(--gray);font-size:14px;line-height:1.7;">Questions or corrections? Send us an email at <a href="mailto:blastedlimit@gmail.com">blastedlimit@gmail.com</a>. The form opens your email app; this site does not store your message.</p>
+          <form id="contact-form" style="display:grid;gap:12px;margin-top:18px;">
+            <label for="contact-subject">Subject</label>
+            <input id="contact-subject" name="subject" required maxlength="120" placeholder="Question or listing correction" />
+            <label for="contact-message">Message</label>
+            <textarea id="contact-message" name="message" required maxlength="2000" rows="5" placeholder="Include the scholarship name and relevant official link."></textarea>
+            <button class="btn-primary" type="submit">Open email app</button>
+            <p id="contact-status" role="status" aria-live="polite" style="color:var(--gray);font-size:12px;"></p>
+          </form>
           
         </div>
         <div class="contact-info-card">
@@ -594,7 +600,7 @@
           </div>
           <div>
             <p style="font-weight:700;color:var(--navy);margin-bottom:6px;font-size:14px;">How do I suggest a new scholarship?</p>
-            <p style="color:var(--gray);font-size:14px;">Email us the scholarship name, link, and details — we'll verify and add it to our database.</p>
+            <p style="color:var(--gray);font-size:14px;">Use the form to prepare a message with the scholarship name, official link, and details for review.</p>
           </div>
         </div>
       </div>
@@ -619,11 +625,11 @@
       </div>
       <div class="info-card">
         <h2><span>📊</span> Information We Collect</h2>
-        <p><strong>We do not require user registration</strong> to use Scholly India. We collect minimal, anonymous information:</p>
+        <p><strong>We do not require user registration</strong> to use Scholly India. The current site has no analytics integration and does not send search terms to its API; the API returns the scholarship catalogue. The hosting provider may process standard request logs.</p>
         <ul>
-          <li><strong>Usage Data:</strong> Anonymous data about pages visited — collected via analytics tools.</li>
-          <li><strong>Search Queries:</strong> Search terms may be logged anonymously to improve search functionality.</li>
-          <li><strong>Contact Info:</strong> If you email us, we collect your email address only to respond to your query.</li>
+          <li><strong>Usage Data:</strong> No analytics tool is configured in this site.</li>
+          <li><strong>Search Queries:</strong> Search filtering runs in your browser and is not submitted to the API.</li>
+          <li><strong>Contact Info:</strong> If you email blastedlimit@gmail.com, the site owner receives your email address and message to respond. The website itself does not receive or store it.</li>
         </ul>
         <p>We do <strong>not</strong> collect Aadhaar numbers, financial information, or any sensitive personal data.</p>
       </div>
@@ -638,6 +644,10 @@
       <div class="info-card" style="border-left-color:#059669;">
         <h2><span>🔗</span> Third-Party Links</h2>
         <p>Scholly India contains links to external websites (NSP, PFMS, scholarship portals). We are not responsible for the privacy practices of these external sites. Once you leave Scholly India, this Privacy Policy no longer applies.</p>
+      </div>
+      <div class="info-card">
+        <h2><span>🌐</span> External Assets</h2>
+        <p>The page loads fonts from Google Fonts, icons from Cloudflare's CDN, and a hero image from Unsplash. Those providers may receive your IP address and standard browser request information when your browser loads these assets. Blocking them may change the page appearance.</p>
       </div>
       <div class="info-card" style="border-left-color:var(--gold);">
         <h2><span>📧</span> Contact for Privacy</h2>
