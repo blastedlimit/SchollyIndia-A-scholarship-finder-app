@@ -21,6 +21,10 @@
   /* ===== API ===== */
   async function fetchAll() {
     const res = await fetch('/api/scholarships');
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error(`Scholarship API returned a non-JSON response (${res.status}). Check the Netlify function logs and redeploy.`);
+    }
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       throw new Error(body.error || `Request failed (${res.status})`);

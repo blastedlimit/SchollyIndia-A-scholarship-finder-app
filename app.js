@@ -5,9 +5,18 @@ import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 
 const moduleDir = dirname(fileURLToPath(import.meta.url));
-const projectDir = existsSync(join(process.cwd(), 'data', 'scholly.sqlite'))
-  ? process.cwd()
-  : moduleDir;
+const projectCandidates = [
+  process.cwd(),
+  moduleDir,
+  dirname(moduleDir),
+  dirname(dirname(moduleDir))
+];
+const projectDir = projectCandidates.find(candidate =>
+  existsSync(join(candidate, 'data', 'scholly.sqlite'))
+);
+if (!projectDir) {
+  throw new Error(`Scholarship database not found. Checked: ${projectCandidates.map(path => join(path, 'data', 'scholly.sqlite')).join(', ')}`);
+}
 
 // Load this Node built-in at runtime so Netlify's bundler doesn't rewrite
 // `node:sqlite` to a nonexistent npm package named `sqlite`.
