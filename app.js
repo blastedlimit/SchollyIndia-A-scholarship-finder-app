@@ -1,21 +1,14 @@
 import express from 'express';
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 
-const moduleDir = dirname(fileURLToPath(import.meta.url));
-const projectCandidates = [
-  process.cwd(),
-  moduleDir,
-  dirname(moduleDir),
-  dirname(dirname(moduleDir))
-];
-const projectDir = projectCandidates.find(candidate =>
-  existsSync(join(candidate, 'data', 'scholly.sqlite'))
-);
-if (!projectDir) {
-  throw new Error(`Scholarship database not found. Checked: ${projectCandidates.map(path => join(path, 'data', 'scholly.sqlite')).join(', ')}`);
+// Netlify runs the function from the deployed site root, where included_files
+// are placed. Locally, start the app from the project root as documented.
+const projectDir = process.cwd();
+const databasePath = join(projectDir, 'data', 'scholly.sqlite');
+if (!existsSync(databasePath)) {
+  throw new Error(`Scholarship database not found at ${databasePath}. Start the server from the project root.`);
 }
 
 // Load this Node built-in at runtime so Netlify's bundler doesn't rewrite
@@ -25,7 +18,6 @@ const { DatabaseSync } = require('node:sqlite');
 
 const app = express();
 const publicDir = join(projectDir, 'public');
-const databasePath = join(projectDir, 'data', 'scholly.sqlite');
 const database = new DatabaseSync(databasePath, { readOnly: true });
 const allScholarships = database.prepare(`
   SELECT scholarship_name, provider_name, scholarship_type, target_state,
