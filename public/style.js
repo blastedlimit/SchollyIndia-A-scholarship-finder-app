@@ -2,6 +2,15 @@
   let allScholarships = [];
   let filteredData    = [];
   let currentSchol    = null;
+  let showingSaved = false;
+  let showingTracked = false;
+  let currentUser = null;
+  let scholarshipTotal = 0;
+  let isPreview = false;
+  let pendingResetToken = new URLSearchParams(window.location.search).get('reset') || '';
+  const localKeys = { profile: 'scholly-profile', saved: 'scholly-saved', tracker: 'scholly-tracker' };
+  const localRead = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
+  const localWrite = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => ({
@@ -20,7 +29,7 @@
 
   /* ===== API ===== */
   async function fetchAll() {
-    const res = await fetch('/api/scholarships');
+    const res = await fetch('/api/scholarships', { cache: 'no-store', credentials: 'same-origin' });
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       throw new Error(`Scholarship API returned a non-JSON response (${res.status}). Check the Netlify function logs and redeploy.`);
@@ -30,7 +39,188 @@
       throw new Error(body.error || `Request failed (${res.status})`);
     }
     const body = await res.json();
-    return body.data;
+    return body;
+  }
+
+  async function refreshScholarships() {
+    const result = await fetchAll();
+    allScholarships = result.data;
+    scholarshipTotal = result.totalCount ?? result.count ?? result.data.length;
+    isPreview = Boolean(result.preview);
+    populateDataFilters(allScholarships);
+    updateLandingStats(allScholarships);
+    updatePreviewNotice();
+    return result;
+  }
+
+  function updateAuthNav() {
+    const button = document.getElementById('account-action');
+    if (!button) return;
+    button.innerHTML = currentUser
+      ? `<i class="fas fa-user-circle"></i> Hi, ${escapeHtml(currentUser.displayName)} <i class="fas fa-chevron-down account-chevron"></i>`
+      : '<i class="fas fa-user-plus"></i> Sign up';
+    button.onclick = currentUser ? toggleAccountMenu : () => showAuthDialog('signup');
+    const menuName = document.getElementById('account-menu-name');
+    const menuEmail = document.getElementById('account-menu-email');
+    if (menuName) menuName.textContent = currentUser?.displayName || 'Student account';
+    if (menuEmail) menuEmail.textContent = currentUser?.email || '';
+    updateSavedControls();
+  }
+
+  function toggleAccountMenu() {
+    const menu = document.getElementById('account-menu');
+    if (menu) menu.hidden = !menu.hidden;
+  }
+
+  function closeAccountMenu() {
+    const menu = document.getElementById('account-menu');
+    if (menu) menu.hidden = true;
+  }
+
+  async function viewSavedScholarships() {
+    if (!requireAccount()) return;
+    closeAccountMenu();
+    await goToSearch();
+    showingSaved = true;
+    showingTracked = false;
+    updateSavedControls();
+    applyFilters();
+  }
+
+  async function viewTrackedApplications() {
+    if (!requireAccount()) return;
+    closeAccountMenu();
+    await goToSearch();
+    showingSaved = false;
+    showingTracked = true;
+    updateSavedControls();
+    applyFilters();
+  }
+
+  async function openStudentProfile() {
+    if (!requireAccount()) return;
+    closeAccountMenu();
+    await goToSearch();
+    document.getElementById('profile-course')?.closest('.filter-group')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('profile-course')?.focus({ preventScroll: true });
+  }
+
+  function updatePreviewNotice() {
+    const notice = document.getElementById('preview-notice');
+    if (!notice) return;
+    notice.hidden = !isPreview;
+    if (isPreview) {
+      notice.innerHTML = `<div><strong>You’re viewing a preview</strong><span>${allScholarships.length} of ${scholarshipTotal} scholarships shown. Create a free account to unlock the full catalogue, save scholarships, and track applications.</span></div><button type="button" onclick="showAuthDialog('signup')">Unlock all scholarships</button>`;
+    }
+  }
+
+  function showAuthDialog(mode = 'signup') {
+    const modal = document.getElementById('auth-modal');
+    if (!modal) return;
+    modal.hidden = false;
+    document.body.classList.add('modal-open');
+    setAuthMode(mode);
+    document.getElementById('auth-status').textContent = '';
+  }
+
+  function closeAuthDialog() {
+    document.getElementById('auth-modal').hidden = true;
+    document.body.classList.remove('modal-open');
+  }
+
+  function setAuthMode(mode) {
+    const modes = ['signup', 'login', 'forgot', 'reset'];
+    for (const item of modes) document.getElementById(`${item}-form`).hidden = mode !== item;
+    const headings = {
+      signup: ['Create your free account', 'Unlock every scholarship and keep your search organized.'],
+      login: ['Welcome back', 'Sign in to continue your scholarship search.'],
+      forgot: ['Reset your password', 'We’ll email you a secure, one-time reset link.'],
+      reset: ['Choose a new password', 'Create a new password for your account.']
+    };
+    document.getElementById('auth-heading').textContent = headings[mode][0];
+    document.querySelector('.auth-intro').textContent = headings[mode][1];
+    document.getElementById('auth-switch').hidden = mode === 'forgot' || mode === 'reset';
+    if (mode === 'signup') {
+      document.getElementById('auth-switch').innerHTML = 'Already have an account? <button type="button" onclick="setAuthMode(\'login\')">Sign in</button>';
+    } else if (mode === 'login') {
+      document.getElementById('auth-switch').innerHTML = 'New to Scholly India? <button type="button" onclick="setAuthMode(\'signup\')">Create an account</button>';
+    }
+    document.getElementById('auth-status').textContent = '';
+  }
+
+  async function submitAccount(event, mode) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const status = document.getElementById('auth-status');
+    const button = form.querySelector('button[type="submit"]');
+    button.disabled = true;
+    status.textContent = 'Please wait…';
+    const fields = Object.fromEntries(new FormData(form));
+    if (mode === 'reset') {
+      if (fields.password !== fields.confirmPassword) {
+        status.textContent = 'The passwords do not match.';
+        button.disabled = false;
+        return;
+      }
+      fields.token = pendingResetToken;
+      delete fields.confirmPassword;
+    }
+    try {
+      const endpoint = { register: 'register', login: 'login', forgot: 'forgot-password', reset: 'reset-password' }[mode];
+      const response = await fetch(`/api/auth/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields)
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Could not complete your request.');
+      if (mode === 'forgot') {
+        status.textContent = result.message;
+        form.reset();
+        return;
+      }
+      if (mode === 'reset') {
+        pendingResetToken = '';
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setAuthMode('login');
+        status.textContent = result.message;
+        form.reset();
+        return;
+      }
+      currentUser = result.user;
+      updateAuthNav();
+      closeAuthDialog();
+      const refresh = await refreshScholarships();
+      filteredData = [...allScholarships];
+      if (document.getElementById('page-search').classList.contains('active')) {
+        renderCards(allScholarships);
+      }
+      document.getElementById('profile-status').textContent = `Welcome, ${currentUser.displayName}! Your account unlocks all ${refresh.totalCount} scholarships.`;
+    } catch (error) {
+      status.textContent = error instanceof TypeError && error.message === 'Failed to fetch'
+        ? 'Cannot reach the signup service. Open Scholly India at http://localhost:3000 (npm run dev), or check that your deployed site has its API configured.'
+        : error.message;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST', cache: 'no-store', credentials: 'same-origin' });
+    currentUser = null;
+    showingSaved = false;
+    showingTracked = false;
+    closeAccountMenu();
+    updateAuthNav();
+    await refreshScholarships();
+    filteredData = [...allScholarships];
+    if (document.getElementById('page-search').classList.contains('active')) renderCards(allScholarships);
+  }
+
+  function requireAccount() {
+    if (currentUser) return true;
+    showAuthDialog('signup');
+    return false;
   }
 
   /* ===== PAGE NAVIGATION ===== */
@@ -86,10 +276,9 @@
     document.getElementById('cards-container').innerHTML =
       '<div class="loader"><div class="spinner"></div><p>Fetching scholarships from database…</p></div>';
     try {
-      allScholarships = await fetchAll();
+      await refreshScholarships();
       filteredData = [...allScholarships];
       renderCards(allScholarships);
-      updateLandingStats(allScholarships);
     } catch(e) {
       document.getElementById('cards-container').innerHTML =
         `<div class="empty-state"><div class="empty-icon">❌</div><h3>Could not load data</h3><p>${e.message}</p></div>`;
@@ -98,14 +287,16 @@
 
   async function loadLandingStats() {
     try {
-      const data = await fetchAll();
-      allScholarships = data;
-      updateLandingStats(data);
+      const authResponse = await fetch('/api/auth/me');
+      const authBody = await authResponse.json();
+      currentUser = authBody.user;
+      updateAuthNav();
+      await refreshScholarships();
     } catch(e) { /* silent */ }
   }
 
   function updateLandingStats(data) {
-    document.getElementById('total-count').innerHTML = `<span>${data.length}</span>`;
+    document.getElementById('total-count').innerHTML = `<span>${scholarshipTotal || data.length}</span>`;
     // top reward
     const withAmount = data.filter(s => s.reward_amount_text);
     if (withAmount.length) {
@@ -123,6 +314,7 @@
   /* ===== FILTERS & RENDERING ===== */
   function courseMatches(s, selectedCourse) {
     const courseText = (s.eligible_courses || '').toLowerCase();
+    const normalized = selectedCourse.toLowerCase();
     const matchers = {
       engineering: /b\.?\s*tech|btech|(?:^|[^a-z])b\.?\s*e(?:[^a-z]|$)|engineering|technology|\btech\b/i,
       medical: /\b(mbbs|medical|nursing|pharmacy|bds|dental)\b/i,
@@ -135,18 +327,24 @@
       pg: /\b(post[\s-]?graduate|masters?|m\.?\s*sc|m\.?\s*tech|m\.?\s*com|mba|pg)\b/i,
       phd: /\b(ph\.?d|research|doctorate)\b/i
     };
-    return Boolean(matchers[selectedCourse]?.test(courseText));
+    if (matchers[normalized]) return matchers[normalized].test(courseText);
+    return courseText.split(/[;,]/).some(value => value.trim() === normalized);
   }
 
   function categoryMatches(s, selectedCategory) {
-    const categories = (s.eligible_categories || '').split(/[;,]/).map(value => value.trim().toLowerCase());
+    const normalize = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const categories = (s.eligible_categories || '').split(/[;,]/).map(normalize).filter(Boolean);
     const gender = (s.target_gender || '').trim().toLowerCase();
     const name = (s.scholarship_name || '').toLowerCase();
-    if (selectedCategory === 'sc/st') return categories.some(value => value === 'sc' || value === 'st');
-    if (selectedCategory === 'girls') return gender === 'female' || categories.some(value => ['female', 'girls', 'women'].includes(value));
+    if (!categories.length || categories.some(value => ['all', 'all categories', 'all students', 'open to all', 'any category'].includes(value))) return true;
+    if (selectedCategory === 'sc/st') return categories.some(value => ['sc', 'st', 'scheduled caste', 'scheduled tribe'].includes(value));
+    if (selectedCategory === 'sc') return categories.some(value => ['sc', 'scheduled caste'].includes(value));
+    if (selectedCategory === 'st') return categories.some(value => ['st', 'scheduled tribe'].includes(value));
+    if (selectedCategory === 'obc') return categories.some(value => ['obc', 'bc', 'ebc', 'sebc', 'backward class', 'other backward classes'].includes(value));
+    if (selectedCategory === 'girls' || selectedCategory === 'female' || selectedCategory === 'women') return gender === 'female' || categories.some(value => ['female', 'girls', 'women'].includes(value));
     if (selectedCategory === 'merit') return name.includes('merit') || Number(s.min_academic_percentage) > 0;
     if (selectedCategory === 'minority') {
-      return categories.some(value => ['minority', 'muslim', 'christian', 'sikh', 'buddhist', 'neo-buddhist', 'jain', 'parsi', 'zoroastrian'].includes(value));
+      return categories.some(value => ['minority', 'muslim', 'christian', 'sikh', 'buddhist', 'neo buddhist', 'jain', 'parsi', 'zoroastrian'].includes(value));
     }
     if (selectedCategory === 'general') return categories.includes('general') || categories.includes('ews');
     return categories.includes(selectedCategory);
@@ -164,6 +362,10 @@
     const sort = document.getElementById('sort-select')?.value || 'name';
 
     let data = allScholarships.filter(s => {
+      const savedNames = localRead(localKeys.saved, []);
+      const trackedItems = localRead(localKeys.tracker, {});
+      if (showingSaved && !savedNames.includes(s.scholarship_name)) return false;
+      if (showingTracked && !trackedItems[s.scholarship_name]) return false;
       if (q) {
         const haystack = [
           s.scholarship_name, s.provider_name, s.eligible_categories, s.eligible_courses,
@@ -172,8 +374,12 @@
         if (!q.split(/\s+/).filter(Boolean).every(word => haystack.includes(word))) return false;
       }
       if (cat && !categoryMatches(s, cat)) return false;
-      if (course && !courseMatches(s, course)) return false;
-      if (deadline && !(s.deadline_month || '').toLowerCase().includes(deadline)) return false;
+      const eligibleCourses = (s.eligible_courses || '').split(/[;,]/).map(value => value.trim().toLowerCase());
+      if (course && !eligibleCourses.includes('all') && !courseMatches(s, course)) return false;
+      const state = (document.getElementById('f-state')?.value || '').trim().toLowerCase();
+      const targetState = (s.target_state || '').trim().toLowerCase();
+      if (state && targetState !== 'all' && targetState && !targetState.includes(state)) return false;
+      if (deadline && (s.deadline_month || '').toLowerCase() !== 'varies' && !(s.deadline_month || '').toLowerCase().includes(deadline)) return false;
       const incomeLimit = Number(s.max_family_income_inr);
       const incomeDescription = (s.reward_amount_text || '').toLowerCase();
       const hasIncomeLimit = s.max_family_income_inr !== null && s.max_family_income_inr !== '' && Number.isFinite(incomeLimit) && incomeLimit > 0 && incomeLimit < 9999999 && !/income must exceed|income must be above|income above/.test(incomeDescription);
@@ -215,12 +421,45 @@
     document.getElementById('search-input').value = '';
     document.getElementById('f-category').value = '';
     document.getElementById('f-course').value = '';
+    document.getElementById('f-state').value = '';
     document.getElementById('f-deadline').value = '';
     document.getElementById('f-income').value = '';
     document.getElementById('f-percent').value = '';
     document.getElementById('sort-select').value = 'name';
+    showingSaved = false;
+    showingTracked = false;
+    updateSavedControls();
     filteredData = [...allScholarships];
     renderCards(allScholarships);
+  }
+
+  function updateSavedControls() {
+    const count = localRead(localKeys.saved, []).length;
+    const tracker = localRead(localKeys.tracker, {});
+    const trackedCount = Object.values(tracker).filter(Boolean).length;
+    const countNode = document.getElementById('saved-count');
+    const button = document.getElementById('saved-toggle');
+    const accountSavedCount = document.getElementById('account-saved-count');
+    const accountTrackedCount = document.getElementById('account-tracked-count');
+    if (countNode) countNode.textContent = count;
+    if (accountSavedCount) accountSavedCount.textContent = count;
+    if (accountTrackedCount) accountTrackedCount.textContent = trackedCount;
+    if (button) button.textContent = `${showingSaved ? '★ Showing saved' : '★ View saved'} (${count})`;
+  }
+  function toggleSavedView() {
+    if (!requireAccount()) return;
+    showingSaved = !showingSaved;
+    showingTracked = false;
+    updateSavedControls();
+    applyFilters();
+    document.getElementById('cards-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function clearSaved() {
+    localWrite(localKeys.saved, []);
+    showingSaved = false;
+    showingTracked = false;
+    updateSavedControls();
+    applyFilters();
   }
 
   function getTypeBadge(s) {
@@ -238,6 +477,7 @@
   function renderCards(data) {
     const container = document.getElementById('cards-container');
     document.getElementById('result-count').textContent = data.length;
+    updatePreviewNotice();
 
     if (data.length === 0) {
       container.innerHTML = `
@@ -253,6 +493,8 @@
       const badge = getTypeBadge(s);
       const cats  = s.eligible_categories ? escapeHtml(s.eligible_categories.split(/[,;]/).slice(0,2).map(c=>c.trim()).join(', ')) : '—';
       const crs   = s.eligible_courses ? escapeHtml(s.eligible_courses.split(/[,;]/).slice(0,2).map(c=>c.trim()).join(', ')) : '—';
+      const saved = localRead(localKeys.saved, []).includes(s.scholarship_name);
+      const tracked = localRead(localKeys.tracker, {})[s.scholarship_name] || '';
       return `
       <div class="schol-card" onclick="showDetail(${i})" style="animation-delay:${Math.min(i*0.04,0.5)}s">
         <div class="card-type-badge ${badge.cls}">${badge.label}</div>
@@ -272,8 +514,82 @@
           </div>
           <button class="view-btn">View Details <i class="fas fa-arrow-right"></i></button>
         </div>
+        <div class="student-actions" onclick="event.stopPropagation()">
+          <button type="button" onclick="toggleSaved('${escapeHtml(s.scholarship_name).replace(/'/g, '&#39;')}')">${saved ? '★ Saved' : '☆ Save'}</button>
+          <label>My status <select aria-label="Application status" onchange="setTracker('${escapeHtml(s.scholarship_name).replace(/'/g, '&#39;')}', this.value)">
+            <option value="">Not tracking</option><option ${tracked === 'Interested' ? 'selected' : ''}>Interested</option><option ${tracked === 'Preparing documents' ? 'selected' : ''}>Preparing documents</option><option ${tracked === 'Applied' ? 'selected' : ''}>Applied</option>
+          </select></label>
+        </div>
       </div>`;
     }).join('');
+  }
+
+  function toggleSaved(name) {
+    if (!requireAccount()) return;
+    const saved = localRead(localKeys.saved, []);
+    const next = saved.includes(name) ? saved.filter(value => value !== name) : [...saved, name];
+    localWrite(localKeys.saved, next);
+    updateSavedControls();
+    applyFilters();
+  }
+  function setTracker(name, status) {
+    if (!requireAccount()) {
+      applyFilters();
+      return;
+    }
+    const tracker = localRead(localKeys.tracker, {});
+    if (status) tracker[name] = status; else delete tracker[name];
+    localWrite(localKeys.tracker, tracker);
+    updateSavedControls();
+  }
+  function saveProfile() {
+    if (!requireAccount()) return;
+    const profile = {
+      course: document.getElementById('profile-course').value,
+      category: document.getElementById('profile-category').value,
+      state: document.getElementById('profile-state').value.trim(),
+      income: document.getElementById('profile-income').value,
+      percent: document.getElementById('profile-percent').value
+    };
+    localWrite(localKeys.profile, profile);
+    document.getElementById('profile-status').textContent = 'Profile saved on this device. Matching scholarships are now shown.';
+    goToSearch().then(() => {
+      document.getElementById('f-course').value = profile.course;
+      document.getElementById('f-category').value = profile.category;
+      document.getElementById('f-income').value = profile.income;
+      document.getElementById('f-percent').value = profile.percent;
+      applyFilters();
+    });
+  }
+  function reportListing(name) {
+    showPage('contact');
+    const subject = document.getElementById('contact-subject');
+    const message = document.getElementById('contact-message');
+    if (subject) subject.value = `Listing report: ${name}`;
+    if (message) message.value = `Please review this scholarship listing.\n\nScholarship: ${name}\nIssue or correction: \nOfficial source link (if available): `;
+    document.getElementById('contact-status').textContent = 'Please describe the issue, then send your report.';
+    message?.focus();
+  }
+  function populateDataFilters(data) {
+    const categorySelect = document.getElementById('f-category');
+    const courseSelect = document.getElementById('f-course');
+    if (!categorySelect || !courseSelect) return;
+    const selectedCat = categorySelect.value;
+    const selectedCourse = courseSelect.value;
+    const commonCategories = ['SC/ST', 'SC', 'ST', 'OBC', 'Minority', 'General', 'EWS', 'Girls'];
+    const categories = [...new Set([...commonCategories, ...data.flatMap(s => (s.eligible_categories || '').split(/[;,]/).map(v => v.trim()).filter(v => v && v.toLowerCase() !== 'all'))])].sort((a,b) => a.localeCompare(b));
+    const courses = [...new Set(data.flatMap(s => (s.eligible_courses || '').split(/[;,]/).map(v => v.trim()).filter(v => v && v.toLowerCase() !== 'all')))].sort((a,b) => a.localeCompare(b));
+    categorySelect.innerHTML = '<option value="">All Categories</option>' + categories.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    categorySelect.value = categories.find(v => v.toLowerCase() === selectedCat.toLowerCase()) || '';
+    const courseGroups = [
+      ['engineering', 'Engineering / B.Tech / BE'], ['medical', 'Medical / MBBS'],
+      ['arts', 'Arts / Humanities'], ['science', 'Science / B.Sc'], ['commerce', 'Commerce / B.Com'],
+      ['law', 'Law / LLB'], ['management', 'Management / MBA'], ['iti', 'ITI / Diploma'],
+      ['pg', 'Post Graduate'], ['phd', 'PhD / Research']
+    ];
+    courseSelect.innerHTML = '<option value="">All Courses</option>' + courseGroups.map(([value,label]) => `<option value="${value}">${label}</option>`).join('') +
+      '<optgroup label="Other catalogue courses">' + courses.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('') + '</optgroup>';
+    courseSelect.value = [...courseSelect.options].some(option => option.value.toLowerCase() === selectedCourse.toLowerCase()) ? selectedCourse : '';
   }
 
   /* ===== DETAIL PAGE ===== */
@@ -352,6 +668,7 @@
               <div>
                 <div class="info-label">Application Deadline Month</div>
                 <div class="info-value">${escapeHtml(s.deadline_month && s.deadline_month.toLowerCase() !== 'varies' ? s.deadline_month : 'Check official portal for current dates')}</div>
+                <div class="info-value listing-freshness">Source/verification date not available in this catalogue. Please confirm details on the provider site.</div>
               </div>
             </div>
           </div>
@@ -406,6 +723,7 @@
         <div class="sidebar-card" style="background:linear-gradient(135deg,var(--navy),var(--navy-light));color:white;">
           <h3 style="color:white;margin-bottom:12px;">⚠️ Important Note</h3>
           <p style="font-size:13px;line-height:1.7;color:rgba(255,255,255,0.75);">Always verify details on the official portal before applying. Scholarship amounts and deadlines may change. Scholly India is a discovery platform only.</p>
+          <button class="report-listing-btn" onclick="reportListing('${escapeHtml(s.scholarship_name).replace(/'/g, '&#39;')}')">Report outdated or incorrect information</button>
 
         </div>
       </div>
@@ -416,6 +734,29 @@
 
   /* ===== INIT ===== */
   window.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('click', event => {
+      const menu = document.getElementById('account-menu');
+      if (menu && !menu.hidden && !menu.contains(event.target) && event.target.id !== 'account-action' && !event.target.closest('#account-action')) {
+        closeAccountMenu();
+      }
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeAccountMenu();
+    });
+    document.getElementById('auth-close')?.addEventListener('click', closeAuthDialog);
+    document.getElementById('auth-modal')?.addEventListener('click', event => {
+      if (event.target.id === 'auth-modal') closeAuthDialog();
+    });
+    document.getElementById('signup-form')?.addEventListener('submit', event => submitAccount(event, 'register'));
+    document.getElementById('login-form')?.addEventListener('submit', event => submitAccount(event, 'login'));
+    document.getElementById('forgot-form')?.addEventListener('submit', event => submitAccount(event, 'forgot'));
+    document.getElementById('reset-form')?.addEventListener('submit', event => submitAccount(event, 'reset'));
+    updateSavedControls();
+    const profile = localRead(localKeys.profile, {});
+    for (const [field, value] of Object.entries({ 'profile-course': profile.course, 'profile-category': profile.category, 'profile-state': profile.state, 'profile-income': profile.income, 'profile-percent': profile.percent })) {
+      const input = document.getElementById(field);
+      if (input && value) input.value = value;
+    }
     document.getElementById('contact-form')?.addEventListener('submit', event => {
       event.preventDefault();
       const subject = document.getElementById('contact-subject').value.trim();
@@ -423,8 +764,9 @@
       const status = document.getElementById('contact-status');
       if (!subject || !message) return;
       const mailto = `mailto:blastedlimit@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-      status.textContent = 'Opening your email app to send this message to blastedlimit@gmail.com.';
+      status.textContent = 'Opening your email app to send this message to blastedlimit@gmail.com. If nothing opens, email blastedlimit@gmail.com and include your report.';
       window.location.href = mailto;
     });
     loadLandingStats();
+    if (pendingResetToken) showAuthDialog('reset');
   });

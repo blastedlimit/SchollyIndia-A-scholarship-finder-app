@@ -5,7 +5,6 @@
   directory = "netlify/functions"
   node_bundler = "esbuild"
   external_node_modules = ["express"]
-  included_files = ["data/scholly.sqlite"]
 
 [[redirects]]
   from = "/api/*"

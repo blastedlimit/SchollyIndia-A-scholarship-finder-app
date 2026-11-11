@@ -24,7 +24,20 @@
     <a onclick="goToSearch()" id="nav-search">Browse Scholarships</a>
     <a href="#page-contact" onclick="showPage('contact');return false;">Contact</a>
     <a class="nav-cta" onclick="goToSearch()"><i class="fas fa-search"></i> Search Now</a>
+    <a class="account-cta" id="account-action" onclick="showAuthDialog('signup')"><i class="fas fa-user-plus"></i> Sign up</a>
   </nav>
+  <div class="account-menu" id="account-menu" hidden>
+    <div class="account-menu-heading">
+      <strong id="account-menu-name">Student account</strong>
+      <span id="account-menu-email"></span>
+    </div>
+    <button type="button" onclick="goToSearch();closeAccountMenu()"><i class="fas fa-search"></i> Browse scholarships</button>
+    <button type="button" onclick="viewSavedScholarships()"><i class="fas fa-bookmark"></i> Saved scholarships <span id="account-saved-count">0</span></button>
+    <button type="button" onclick="viewTrackedApplications()"><i class="fas fa-clipboard-check"></i> Application tracker <span id="account-tracked-count">0</span></button>
+    <button type="button" onclick="openStudentProfile()"><i class="fas fa-user-edit"></i> My profile & matches</button>
+    <div class="account-menu-divider"></div>
+    <button type="button" class="account-signout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign out</button>
+  </div>
 </header>
 
 <!-- ===================== PAGE 1: LANDING ===================== -->
@@ -229,6 +242,21 @@
         <h3><i class="fas fa-sliders-h" style="color:var(--orange);margin-right:8px"></i>Filters</h3>
         <button class="clear-btn" onclick="clearFilters()">Clear All</button>
       </div>
+      <div class="saved-shortcut-row">
+        <button type="button" id="saved-toggle" onclick="toggleSavedView()">★ View saved <span id="saved-count">0</span></button>
+        <button type="button" id="saved-clear" onclick="clearSaved()">Clear saved</button>
+      </div>
+
+      <div class="filter-group">
+        <label>My Scholarship Profile</label>
+        <select id="profile-category"><option value="">Any category</option><option>SC</option><option>ST</option><option>OBC</option><option>Minority</option><option>General</option><option>EWS</option></select>
+        <select id="profile-course" style="margin-top:8px"><option value="">Any course</option><option value="engineering">Engineering</option><option value="medical">Medical</option><option value="arts">Arts / Humanities</option><option value="science">Science</option><option value="commerce">Commerce</option><option value="law">Law</option><option value="management">Management</option><option value="iti">ITI / Diploma</option><option value="pg">Post Graduate</option><option value="phd">PhD / Research</option></select>
+        <input type="text" id="profile-state" placeholder="State (optional)" style="margin-top:8px" />
+        <input type="number" id="profile-income" placeholder="Family income per year" style="margin-top:8px" />
+        <input type="number" id="profile-percent" placeholder="Academic percentage" min="0" max="100" style="margin-top:8px" />
+        <button class="profile-save-btn" onclick="saveProfile()">Save profile & find matches</button>
+        <div id="profile-status" class="profile-status">Profile stays in this browser.</div>
+      </div>
 
       <div class="filter-group">
         <label>Category</label>
@@ -280,6 +308,11 @@
       </div>
 
       <div class="filter-group">
+        <label>State</label>
+        <input type="text" id="f-state" placeholder="e.g. Maharashtra" oninput="applyFilters()" />
+      </div>
+
+      <div class="filter-group">
         <label>My Family Income (₹/yr)</label>
         <input type="number" id="f-income" placeholder="e.g. 250000" oninput="applyFilters()" />
         <div style="font-size:11px;color:var(--gray);margin-top:5px;">Enter your family income to see eligible scholarships</div>
@@ -301,6 +334,7 @@
           <option value="deadline">Sort: Deadline</option>
         </select>
       </div>
+      <div class="preview-notice" id="preview-notice" hidden></div>
       <div class="cards-grid" id="cards-container">
         <div class="loader"><div class="spinner"></div><p>Loading scholarships…</p></div>
       </div>
@@ -690,6 +724,47 @@
     </div>
   </div>
   <footer><div class="footer-bottom" style="border-top:none;padding-top:0"><span>© 2026 Scholly India.</span><a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a></div></footer>
+</div>
+<div class="auth-modal" id="auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="auth-heading">
+  <div class="auth-card">
+    <button class="auth-close" id="auth-close" type="button" aria-label="Close">&times;</button>
+    <div class="auth-mark">🎓</div>
+    <h2 id="auth-heading">Create your free account</h2>
+    <p class="auth-intro">Unlock the full scholarship catalogue and student tools.</p>
+    <form id="signup-form" class="auth-form">
+      <label for="signup-name">Your name</label>
+      <input id="signup-name" name="name" autocomplete="name" minlength="2" maxlength="80" required placeholder="e.g. Asha Sharma" />
+      <label for="signup-email">Email address</label>
+      <input id="signup-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
+      <label for="signup-password">Password</label>
+      <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="At least 8 characters" />
+      <button class="auth-submit" type="submit">Create free account</button>
+    </form>
+    <form id="login-form" class="auth-form" hidden>
+      <label for="login-email">Email address</label>
+      <input id="login-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
+      <label for="login-password">Password</label>
+      <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+      <button class="auth-submit" type="submit">Sign in</button>
+      <button class="auth-text-link" type="button" onclick="setAuthMode('forgot')">Forgot password?</button>
+    </form>
+    <form id="forgot-form" class="auth-form" hidden>
+      <label for="forgot-email">Email address</label>
+      <input id="forgot-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
+      <button class="auth-submit" type="submit">Send reset link</button>
+      <button class="auth-text-link" type="button" onclick="setAuthMode('login')">Back to sign in</button>
+    </form>
+    <form id="reset-form" class="auth-form" hidden>
+      <label for="reset-password">New password</label>
+      <input id="reset-password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required placeholder="At least 8 characters" />
+      <label for="reset-confirm-password">Confirm new password</label>
+      <input id="reset-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required />
+      <button class="auth-submit" type="submit">Update password</button>
+    </form>
+    <p class="auth-status" id="auth-status" role="status" aria-live="polite"></p>
+    <p class="auth-switch" id="auth-switch">Already registered? <button type="button" onclick="setAuthMode('login')">Sign in</button></p>
+    <p class="auth-privacy">Your password is securely hashed before it is stored. We never ask for scholarship application documents here.</p>
+  </div>
 </div>
 <script src="style.js"></script>
 

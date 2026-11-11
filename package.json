@@ -9,9 +9,13 @@
     "dev": "node --watch server.js",
     "seed": "node scripts/import-scholarships.js"
   },
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "dependencies": {
+    "dotenv": "^18.0.10",
     "express": "^5.1.0",
+    "mongodb": "^7.8.0",
     "serverless-http": "^3.2.0"
   }
 }
