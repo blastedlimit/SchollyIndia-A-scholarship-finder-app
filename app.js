@@ -78,7 +78,15 @@ function getScholarshipCollection() {
   }
 
   if (!client) client = new MongoClient(mongoUri);
-  if (!connectionPromise) connectionPromise = client.connect();
+  if (!connectionPromise) {
+    const connectingClient = client;
+    connectionPromise = connectingClient.connect().catch(async error => {
+      connectionPromise = null;
+      client = null;
+      await connectingClient.close().catch(() => {});
+      throw error;
+    });
+  }
 
   return connectionPromise.then(connectedClient =>
     connectedClient.db(databaseName).collection('scholarships')
@@ -252,7 +260,25 @@ app.use(express.static(publicDir, { extensions: ['html'] }));
 
 app.use((error, _req, res, _next) => {
   console.error('API request failed:', error.message);
-  res.status(503).json({ error: 'Scholarship database is unavailable. Please try again shortly.' });
+  const diagnosticCode = error.code ?? error.cause?.code ?? error.cause?.cause?.code ?? error.name ?? 'UNKNOWN';
+  const diagnosticText = `${error.message || ''} ${error.cause?.message || ''}`.toLowerCase();
+  const dnsTimeout = ['ETIMEOUT', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN', 'ESERVFAIL'].includes(String(diagnosticCode).toUpperCase()) || diagnosticText.includes('querysrv');
+  const authFailure = String(diagnosticCode) === '18' || /authentication failed|bad auth/i.test(diagnosticText);
+  const accessListFailure = /not authorized|ip address|not whitelisted/i.test(diagnosticText);
+  const tlsFailure = String(diagnosticCode).startsWith('ERR_SSL') || diagnosticText.includes('tls alert');
+  const message = dnsTimeout
+    ? 'MongoDB Atlas DNS lookup failed. Check the Atlas connection-string hostname and whether your network allows DNS SRV lookups.'
+    : authFailure
+      ? 'MongoDB rejected the database username or password. Check the Atlas database user and URL-encode special characters in its password.'
+      : accessListFailure
+        ? 'MongoDB Atlas blocked this network address. Add your current IP under Atlas Network Access.'
+        : tlsFailure
+          ? 'The TLS handshake with MongoDB Atlas failed. Recheck the URI from Atlas, IP access list, and network/firewall or VPN settings for outbound TCP 27017.'
+        : 'Scholarship database is unavailable. Please try again shortly.';
+  res.status(503).json({
+    error: message,
+    diagnosticCode: String(diagnosticCode)
+  });
 });
 
 export default app;
