@@ -94,6 +94,11 @@
         <p>Filter by category, course, family income, academic percentage, deadline and more to find scholarships made for you.</p>
       </div>
       <div class="feature-card">
+        <div class="feature-icon">✨</div>
+        <h3>AI Scholarship Matches</h3>
+        <p>Get ranked recommendations using profile eligibility signals and TF-IDF text similarity, with a clear explanation for each match.</p>
+      </div>
+      <div class="feature-card">
         <div class="feature-icon">⚡</div>
         <h3>Scholarship Database</h3>
         <p>Listings are maintained in our scholarship database. Availability, eligibility and dates can change, so confirm details with the official provider.</p>
@@ -332,8 +337,10 @@
           <option value="name">Sort: A-Z</option>
           <option value="amount">Sort: Highest Reward</option>
           <option value="deadline">Sort: Deadline</option>
+          <option value="match">Sort: Best profile match</option>
         </select>
       </div>
+      <div class="match-explainer" id="match-explainer" hidden><i class="fas fa-wand-magic-sparkles"></i><span>Smart matches combine scholarship text similarity with profile eligibility signals. Scores are recommendations, not a confirmation of eligibility.</span></div>
       <div class="preview-notice" id="preview-notice" hidden></div>
       <div class="cards-grid" id="cards-container">
         <div class="loader"><div class="spinner"></div><p>Loading scholarships…</p></div>

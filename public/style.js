@@ -7,6 +7,8 @@
   let currentUser = null;
   let scholarshipTotal = 0;
   let isPreview = false;
+  let matchResults = new Map();
+  let matchProfileKey = '';
   let pendingResetToken = new URLSearchParams(window.location.search).get('reset') || '';
   const localKeys = { profile: 'scholly-profile', saved: 'scholly-saved', tracker: 'scholly-tracker' };
   const localRead = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
@@ -350,6 +352,144 @@
     return categories.includes(selectedCategory);
   }
 
+  function readStudentProfile() {
+    return {
+      category: document.getElementById('profile-category')?.value || '',
+      course: document.getElementById('profile-course')?.value || '',
+      state: document.getElementById('profile-state')?.value.trim() || '',
+      income: document.getElementById('profile-income')?.value || '',
+      percent: document.getElementById('profile-percent')?.value || ''
+    };
+  }
+
+  function profileHasSignals(profile) {
+    return Boolean(profile.category || profile.course || profile.state || profile.income || profile.percent);
+  }
+
+  function tokenizeMatchText(value) {
+    const stopWords = new Set(['the', 'for', 'and', 'with', 'from', 'students', 'student', 'scholarship', 'scheme', 'india', 'all']);
+    return String(value || '').toLowerCase().match(/[a-z0-9]+/g)?.filter(token => token.length > 1 && !stopWords.has(token)) || [];
+  }
+
+  function profileSearchText(profile) {
+    const courseSynonyms = {
+      engineering: 'engineering technology btech b tech be bachelor engineering',
+      medical: 'medical mbbs nursing pharmacy dental bds healthcare',
+      arts: 'arts humanities social sciences literature',
+      science: 'science bsc research stem',
+      commerce: 'commerce bcom accounting finance',
+      law: 'law llb legal',
+      management: 'management mba business administration',
+      iti: 'iti diploma polytechnic vocational',
+      pg: 'postgraduate masters pg',
+      phd: 'phd doctorate research'
+    };
+    const categorySynonyms = {
+      sc: 'sc scheduled caste', st: 'st scheduled tribe', obc: 'obc backward classes bc sebc',
+      minority: 'minority muslim christian sikh buddhist jain parsi',
+      ews: 'ews economically weaker section', general: 'general open category'
+    };
+    return [
+      profile.course,
+      courseSynonyms[profile.course] || '',
+      profile.category,
+      categorySynonyms[profile.category.toLowerCase()] || '',
+      profile.state
+    ].filter(Boolean).join(' ');
+  }
+
+  function calculateProfileMatches(profile) {
+    if (!profileHasSignals(profile)) {
+      matchResults = new Map();
+      matchProfileKey = '';
+      return matchResults;
+    }
+
+    const profileKey = `${JSON.stringify(profile)}:${allScholarships.length}`;
+    if (profileKey === matchProfileKey) return matchResults;
+    matchProfileKey = profileKey;
+
+    const documents = allScholarships.map(s => tokenizeMatchText([
+      s.scholarship_name, s.provider_name, s.scholarship_type, s.target_state,
+      s.target_gender, s.eligible_categories, s.eligible_courses, s.reward_amount_text
+    ].join(' ')));
+    const documentFrequency = new Map();
+    for (const terms of documents) {
+      for (const term of new Set(terms)) documentFrequency.set(term, (documentFrequency.get(term) || 0) + 1);
+    }
+    const idf = new Map([...documentFrequency].map(([term, frequency]) => [
+      term, Math.log(1 + (documents.length + 1) / (frequency + 1))
+    ]));
+    const vectorize = terms => {
+      const counts = new Map();
+      for (const term of terms) counts.set(term, (counts.get(term) || 0) + 1);
+      const vector = new Map();
+      for (const [term, count] of counts) vector.set(term, (count / terms.length) * (idf.get(term) || 0));
+      return vector;
+    };
+    const queryTerms = tokenizeMatchText(profileSearchText(profile));
+    const query = vectorize(queryTerms);
+    const norm = vector => Math.sqrt([...vector.values()].reduce((sum, value) => sum + value * value, 0));
+    const queryNorm = norm(query);
+    const signals = [
+      ['Course', 0.28, Boolean(profile.course)],
+      ['Category', 0.24, Boolean(profile.category)],
+      ['State', 0.18, Boolean(profile.state)],
+      ['Family income', 0.16, Boolean(profile.income)],
+      ['Academic percentage', 0.14, Boolean(profile.percent)]
+    ].filter(([, , active]) => active);
+
+    matchResults = new Map(allScholarships.map((s, index) => {
+      const scholarshipVector = vectorize(documents[index]);
+      let dot = 0;
+      for (const [term, value] of query) dot += value * (scholarshipVector.get(term) || 0);
+      const similarity = queryNorm && norm(scholarshipVector) ? dot / (queryNorm * norm(scholarshipVector)) : 0;
+      let weightedFit = 0;
+      let totalWeight = 0;
+      const reasons = [];
+      const addSignal = (label, weight, state) => {
+        totalWeight += weight;
+        weightedFit += weight * (state === 'match' ? 1 : state === 'unknown' ? 0.5 : 0);
+        reasons.push(state === 'match' ? `${label} matches` : state === 'unknown' ? `${label} not specified` : `${label} may not fit`);
+      };
+
+      if (profile.course) {
+        const courses = (s.eligible_courses || '').trim();
+        addSignal('Course', 0.28, !courses ? 'unknown' : courses.toLowerCase().split(/[;,]/).some(v => v.trim() === 'all') || courseMatches(s, profile.course) ? 'match' : 'mismatch');
+      }
+      if (profile.category) {
+        const categories = (s.eligible_categories || '').trim();
+        addSignal('Category', 0.24, !categories ? 'unknown' : categoryMatches(s, profile.category.toLowerCase()) ? 'match' : 'mismatch');
+      }
+      if (profile.state) {
+        const target = (s.target_state || '').trim().toLowerCase();
+        addSignal('State', 0.18, !target ? 'unknown' : target === 'all' || target.includes(profile.state.toLowerCase()) ? 'match' : 'mismatch');
+      }
+      if (profile.income) {
+        const limit = Number(s.max_family_income_inr);
+        const knownLimit = Number.isFinite(limit) && limit > 0 && limit < 9999999;
+        addSignal('Income', 0.16, !knownLimit ? 'unknown' : Number(profile.income) <= limit ? 'match' : 'mismatch');
+      }
+      if (profile.percent) {
+        const minimum = Number(s.min_academic_percentage);
+        const knownMinimum = Number.isFinite(minimum) && minimum > 0;
+        addSignal('Marks', 0.14, !knownMinimum ? 'unknown' : Number(profile.percent) >= minimum ? 'match' : 'mismatch');
+      }
+
+      const eligibilityFit = totalWeight ? weightedFit / totalWeight : 0;
+      const score = Math.round((eligibilityFit * 0.8 + similarity * 0.2) * 100);
+      return [s, { score, similarity, reasons: reasons.slice(0, 3) }];
+    }));
+    return matchResults;
+  }
+
+  function updateMatchNotice() {
+    const notice = document.getElementById('match-explainer');
+    if (!notice) return;
+    const enabled = document.getElementById('sort-select')?.value === 'match' && profileHasSignals(readStudentProfile());
+    notice.hidden = !enabled;
+  }
+
   function applyFilters() {
     const q = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
     const cat = (document.getElementById('f-category')?.value || '').trim().toLowerCase();
@@ -360,6 +500,8 @@
     const percentValue = document.getElementById('f-percent')?.value ?? '';
     const myPct = percentValue === '' ? null : Number(percentValue);
     const sort = document.getElementById('sort-select')?.value || 'name';
+    calculateProfileMatches(readStudentProfile());
+    updateMatchNotice();
 
     let data = allScholarships.filter(s => {
       const savedNames = localRead(localKeys.saved, []);
@@ -390,7 +532,8 @@
       return true;
     });
 
-    if (sort === 'name') data.sort((a, b) => (a.scholarship_name || '').localeCompare(b.scholarship_name || ''));
+    if (sort === 'match') data.sort((a, b) => (matchResults.get(b)?.score || 0) - (matchResults.get(a)?.score || 0));
+    else if (sort === 'name') data.sort((a, b) => (a.scholarship_name || '').localeCompare(b.scholarship_name || ''));
     else if (sort === 'amount') data.sort((a, b) => {
       const amount = value => parseFloat((value || '').replace(/[^0-9.]/g, '')) || 0;
       return amount(b.reward_amount_text) - amount(a.reward_amount_text);
@@ -478,6 +621,8 @@
     const container = document.getElementById('cards-container');
     document.getElementById('result-count').textContent = data.length;
     updatePreviewNotice();
+    calculateProfileMatches(readStudentProfile());
+    updateMatchNotice();
 
     if (data.length === 0) {
       container.innerHTML = `
@@ -495,6 +640,8 @@
       const crs   = s.eligible_courses ? escapeHtml(s.eligible_courses.split(/[,;]/).slice(0,2).map(c=>c.trim()).join(', ')) : '—';
       const saved = localRead(localKeys.saved, []).includes(s.scholarship_name);
       const tracked = localRead(localKeys.tracker, {})[s.scholarship_name] || '';
+      const match = profileHasSignals(readStudentProfile()) ? matchResults.get(s) : null;
+      const matchCard = match ? `<div class="ai-match-card"><strong><i class="fas fa-wand-magic-sparkles"></i> ${match.score}% profile match</strong><span>${escapeHtml(match.reasons.join(' · '))}${match.reasons.length ? ' · ' : ''}Eligibility details may be incomplete; confirm with the provider.</span></div>` : '';
       return `
       <div class="schol-card" onclick="showDetail(${i})" style="animation-delay:${Math.min(i*0.04,0.5)}s">
         <div class="card-type-badge ${badge.cls}">${badge.label}</div>
@@ -502,6 +649,7 @@
         <div class="card-amount">
           <div class="amount-pill">${escapeHtml(s.reward_amount_text || 'Amount varies')}</div>
         </div>
+        ${matchCard}
         <div class="card-meta">
           <div class="meta-chip"><i class="fas fa-users"></i> ${cats}</div>
           <div class="meta-chip"><i class="fas fa-book"></i> ${crs}</div>
@@ -544,21 +692,19 @@
   }
   function saveProfile() {
     if (!requireAccount()) return;
-    const profile = {
-      course: document.getElementById('profile-course').value,
-      category: document.getElementById('profile-category').value,
-      state: document.getElementById('profile-state').value.trim(),
-      income: document.getElementById('profile-income').value,
-      percent: document.getElementById('profile-percent').value
-    };
+    const profile = readStudentProfile();
+    if (!profileHasSignals(profile)) {
+      document.getElementById('profile-status').textContent = 'Add at least one profile detail to get recommendations.';
+      return;
+    }
     localWrite(localKeys.profile, profile);
-    document.getElementById('profile-status').textContent = 'Profile saved on this device. Matching scholarships are now shown.';
+    document.getElementById('profile-status').textContent = 'Profile saved on this device. Ranking scholarships with the smart match model…';
     goToSearch().then(() => {
-      document.getElementById('f-course').value = profile.course;
-      document.getElementById('f-category').value = profile.category;
-      document.getElementById('f-income').value = profile.income;
-      document.getElementById('f-percent').value = profile.percent;
+      clearFilters();
+      document.getElementById('sort-select').value = 'match';
       applyFilters();
+      document.getElementById('profile-status').textContent = 'Recommendations ranked using profile fit and scholarship text similarity.';
+      document.getElementById('cards-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
   function reportListing(name) {

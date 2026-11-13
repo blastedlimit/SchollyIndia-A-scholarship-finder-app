@@ -33,6 +33,10 @@ For a first test, send a reset link to an account you control and check Resend's
 
 The API is available at `/api/scholarships`; `/api/health` reports the MongoDB connection status, scholarship count, and whether password-recovery mail is configured. Guests receive a stable preview of about one third of the catalogue. Registered users receive the full catalogue. Account endpoints are `/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`, `/api/auth/forgot-password`, and `/api/auth/reset-password`.
 
+## Smart scholarship recommendations
+
+When a signed-in student saves a profile, Scholly India ranks scholarships with a small, explainable content-based recommender. It builds TF-IDF vectors from scholarship names, providers, courses, categories, and states, then compares the profile query with each listing using cosine similarity. A weighted eligibility-fit score is combined with text similarity: course 28%, category 24%, state 18%, income 16%, and academic percentage 14%; missing listing criteria are treated as unknown, not confirmed matches. The final ranking uses 80% eligibility fit and 20% text similarity. The browser computes the ranking locally; student profile details are not sent to an external AI service. Scores are suggestions, not an eligibility decision.
+
 ## Data and accounts
 
 MongoDB Atlas is the runtime database. The SQLite file and CSV are retained as the source catalogue for the initial import and future manual refreshes. The importer upserts records by their original SQLite ID, so it can be rerun safely.
