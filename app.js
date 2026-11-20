@@ -5,9 +5,12 @@ import { promisify } from 'node:util';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync, existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { MongoClient } from 'mongodb';
-import defaultScholarships from './data/scholarships.json' with { type: 'json' };
-import defaultJobs from './data/government-jobs.json' with { type: 'json' };
+
+const require = createRequire(import.meta.url);
+const defaultScholarships = require('./data/scholarships.json');
+const defaultJobs = require('./data/government-jobs.json');
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const candidateDirs = [process.cwd(), appDir, join(appDir, '..'), join(appDir, '../..')];
