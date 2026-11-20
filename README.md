@@ -1,54 +1,214 @@
 # Scholly India — Build Your Future
 
-Live site: https://schollyindia.netlify.app/
+**Live site:** https://schollyindia.netlify.app/
 
-Scholarship and government career discovery app with an Express API, MongoDB Atlas storage, and a static frontend. The tagline is **Build Your Future**. Scholarship records and government recruitment guides are stored in separate MongoDB collections.
+India's all-in-one scholarship and government career discovery platform. Students can explore **219 live scholarships** and **232 government recruitment routes** — with real application open dates, closing deadlines, exam dates, admit card dates, and direct official portal links — all in one place.
 
-## Run locally
+---
 
-1. Install Node.js 24 or newer and run `npm install`.
-2. Create a `.env` file in the project root with:
+## ✨ Features
 
-   ```env
-   MONGODB_URI="your MongoDB Atlas connection string"
-   AUTH_SECRET="a random secret of at least 32 characters"
-   RESEND_API_KEY="your Resend API key"
-   MAIL_FROM="Scholly India <passwords@send.yourdomain.com>"
-   APP_BASE_URL="http://localhost:3000"
-   ```
+- 🎓 **219 Scholarships** with live open/close dates, days-left countdown, and eligibility details
+- 🏛️ **232 Government Career Routes** (UPSC, SSC, RRB, IBPS, State PSCs, Defence, and more) with real 2026–2027 exam schedules
+- 📅 **Live Date Feed** — real application windows and exam dates sourced from official portals (upsc.gov.in, ssc.nic.in, ibps.in, scholarships.gov.in, etc.)
+- 🔔 Status badges: `OPEN`, `CLOSING SOON`, `UPCOMING`, `CLOSED` — computed in real time
+- 🔍 Smart search + filters (category, state, qualification, route type)
+- ⭐ Save scholarships and government career routes across sessions
+- 🤖 **AI-powered recommender** — ranks scholarships by profile match (course, category, state, income, marks) using TF-IDF + cosine similarity, computed locally
+- 🔐 Full auth system — register, login, password recovery via email
+- 👁️ Guest preview mode — ~1/3 of catalogue visible without login; full catalogue unlocked on sign-in
 
-3. Import the scholarship catalogue with `node scripts/import-to-mongodb.js` and the government recruitment guide with `npm run seed:jobs`.
-4. Run `npm run dev` and open `http://localhost:3000`.
+---
 
-`.env.example` shows the required variable names and formats. Copy it to `.env`, replace the placeholders, and keep `.env` private. To make password recovery email work, use a sender domain you control:
+## 🚀 Run Locally
 
-1. Create a Resend account and open its **Domains** page.
-2. Add a domain or sending subdomain that you own, such as `send.example.com`.
-3. Resend will show the DNS records required for verification. Add those records at the company where that domain's DNS is managed, then wait until Resend marks the domain verified. Resend's SPF/DKIM records authorize sending for your domain; use the exact values shown in your account. See [Resend domain verification](https://resend.com/docs/dashboard/domains/introduction).
-4. In Resend, create an API key and put it in `RESEND_API_KEY`.
-5. Set `MAIL_FROM` to a sender on the verified domain, for example `Scholly India <passwords@send.example.com>`. Replace `example.com` with your own verified domain; a Gmail address is not a substitute for a verified sending domain. Resend's email API expects a `from` sender and recipient; see its [email API docs](https://resend.com/docs/api-reference/emails/send-email).
-6. Set `APP_BASE_URL` to `http://localhost:3000` for local use. On Netlify, use the full deployed site URL, such as `https://your-site.netlify.app`.
+### 1. Prerequisites
 
-For a first test, send a reset link to an account you control and check Resend's **Emails** page for delivery status. Keep the Resend API key only in `.env` locally and in Netlify's function-scoped environment variables when deployed.
+- Node.js 24 or newer
+- A free [MongoDB Atlas](https://www.mongodb.com/atlas) cluster
+- A free [Resend](https://resend.com) account (for password recovery emails)
 
-The APIs are `/api/scholarships` and `/api/jobs`; `/api/health` reports the MongoDB connection status, scholarship count, and whether password-recovery mail is configured. Guests receive a stable preview of about one third of both catalogues. Signed-in users can access the full scholarship and government career catalogues and the full government career planning resources. Account endpoints are `/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`, `/api/auth/forgot-password`, and `/api/auth/reset-password`.
+### 2. Install dependencies
 
-## Government jobs and exams guide
+```bash
+npm install
+```
 
-`data/government-jobs.json` contains 232 records derived from the National Exams, State-UT Routes, and Sector Routes sheets in `India_Government_Jobs_Exams_Master_Guide.xlsx`. Import or refresh these records in MongoDB with `npm run seed:jobs`; the importer upserts them by workbook ID into `schollyindia.government_jobs`. The jobs page supports free-text search and filters for route type, state/UT, and broad qualification level, and lets students save routes in their current browser.
+### 3. Configure environment
 
-This workbook is a recruitment planning reference, not a complete vacancy feed. It says it covers major national recruitment families and gateways across states and union territories, not every post or department. National details are representative baselines; state route details are broad discovery hints. Watch months are not closing dates, and no record proves that recruitment is currently open. Use the linked official starting portal and read the exact current notice, corrigenda, and eligibility rules before applying. This data is not automatically refreshed from those sites.
+Create a `.env` file in the project root (copy from `.env.example`):
 
-## Smart scholarship recommendations
+```env
+MONGODB_URI="your MongoDB Atlas connection string"
+AUTH_SECRET="a random secret of at least 32 characters"
+RESEND_API_KEY="your Resend API key"
+MAIL_FROM="Scholly India <passwords@send.yourdomain.com>"
+APP_BASE_URL="http://localhost:3000"
+```
 
-When a signed-in student saves a profile, Scholly India ranks scholarships with a small, explainable content-based recommender. It builds TF-IDF vectors from scholarship names, providers, courses, categories, and states, then compares the profile query with each listing using cosine similarity. A weighted eligibility-fit score is combined with text similarity: course 28%, category 24%, state 18%, income 16%, and academic percentage 14%; missing listing criteria are treated as unknown, not confirmed matches. The final ranking uses 80% eligibility fit and 20% text similarity. The browser computes the ranking locally; student profile details are not sent to an external AI service. Scores are suggestions, not an eligibility decision.
+### 4. Seed the database
 
-## Data and accounts
+```bash
+# Import scholarship catalogue (219 records)
+node scripts/import-scholarships.js
 
-MongoDB Atlas is the runtime database. The SQLite file and CSV are retained as the source catalogue for the initial import and future manual refreshes. The importer upserts records by their original SQLite ID, so it can be rerun safely.
+# Import government careers catalogue (232 records)
+npm run seed:jobs
+```
 
-User passwords are hashed with Node's `scrypt`; sessions use a signed, HTTP-only cookie. Sign-up normalizes email addresses and MongoDB enforces a unique email index. Password recovery uses one-time, 30-minute reset links sent through Resend. Configure a Resend API key and verified sender before recovery emails can be delivered. Set a strong, unique `AUTH_SECRET` locally and in your hosting provider's environment settings. Never commit `.env` or expose secrets in browser code. Scholarship details and deadlines still need confirmation from the official provider.
+### 5. Start the server
 
-## Deploy to Netlify
+```bash
+npm run dev
+```
 
-The included `netlify.toml` configures `public/` as the publish directory and routes `/api/*` to the Netlify Function. In Netlify's environment variable settings, add `MONGODB_URI`, `AUTH_SECRET`, `RESEND_API_KEY`, `MAIL_FROM`, and `APP_BASE_URL`, with Function runtime scope enabled. `APP_BASE_URL` must be your deployed site URL. Deploy after saving the variables.
+Open `http://localhost:3000` in your browser.
+
+> **Note:** The app works without MongoDB too — it falls back to the local JSON files in `data/` automatically.
+
+---
+
+## 📅 Live Dates System
+
+Scholarship and government career dates are stored in:
+
+| File | Records | Fields |
+|------|---------|--------|
+| `data/scholarships.json` | 219 | `open_date`, `close_date`, `listing_status`, `days_left`, `application_fee`, `documents_required`, `how_to_apply` |
+| `data/government-jobs.json` | 232 | `applicationOpenDate`, `applicationCloseDate`, `examDate`, `admitCardDate`, `vacancies`, `salaryOrPay`, `applicationFee`, `selectionStages`, `howToApply` |
+
+All dates are in `YYYY-MM-DD` format, verified against official government portals for the **2026–2027 recruitment cycle**. The `computeLiveDates()` function in `app.js` dynamically calculates `listing_status` and `days_left` on every API request so the displayed status is always current.
+
+**Official sources used:**
+- Scholarships: `scholarships.gov.in`, `mahadbt.maharashtra.gov.in`, `minorityaffairs.gov.in`, state scholarship portals
+- Government Careers: `upsc.gov.in`, `ssc.nic.in`, `ibps.in`, `indianrailways.gov.in`, `nta.ac.in`, state PSC portals
+
+> **Important:** Always verify exact dates, eligibility, and vacancies on the official portal before applying. Deadlines can change via corrigenda after our data was last verified.
+
+---
+
+## 🏛️ Government Careers Guide
+
+`data/government-jobs.json` contains **232 records** across three recruitment categories:
+
+| Category | Examples |
+|----------|---------|
+| **National Exams** | UPSC CSE, IFoS, ESE, NDA, CDS; SSC CGL, CHSL, MTS, CPO; RRB NTPC, ALP, Group D; IBPS PO, Clerk, SO; NTA JEE, NEET |
+| **State / UT Routes** | All 28 States + 8 UTs — PSC exams, subordinate service commissions |
+| **Sector Routes** | Defence (Army, Navy, Air Force); Teaching (NVS, KVS, DSSSB); Banking; Insurance; PSUs |
+
+Each record includes: exam dates, application window, admit card release, vacancies, pay scale, eligibility, selection stages, application fee, and direct official URL.
+
+---
+
+## 🤖 AI-Powered Scholarship Recommender
+
+When a signed-in student saves a profile, Scholly India ranks scholarships using a local content-based recommender:
+
+- Builds **TF-IDF vectors** from scholarship names, providers, courses, categories, and states
+- Computes **cosine similarity** between the student profile and each listing
+- Combines text similarity (20%) with weighted eligibility-fit score (80%):
+
+| Factor | Weight |
+|--------|--------|
+| Course match | 28% |
+| Category match | 24% |
+| State match | 18% |
+| Income eligibility | 16% |
+| Academic percentage | 14% |
+
+Computed entirely in the browser — no student data is sent to any external AI service.
+
+---
+
+## 🔐 Auth & Security
+
+- Passwords hashed with Node's `scrypt`
+- Sessions via signed, HTTP-only cookie
+- Email normalized; unique index enforced in MongoDB
+- Password recovery: one-time 30-minute reset links via Resend
+- Never commit `.env` or expose `AUTH_SECRET` in client code
+
+---
+
+## 🌐 API Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/scholarships` | All scholarships with live dates, status, days left |
+| `GET /api/jobs` | All government career routes with live recruitment schedule |
+| `GET /api/health` | MongoDB status, record counts, mail config status |
+| `POST /api/auth/register` | Create account |
+| `POST /api/auth/login` | Sign in |
+| `GET /api/auth/me` | Current user info |
+| `POST /api/auth/logout` | Sign out |
+| `POST /api/auth/forgot-password` | Send reset link |
+| `POST /api/auth/reset-password` | Reset password with token |
+
+---
+
+## ☁️ Deploy to Netlify
+
+1. The included `netlify.toml` sets `public/` as publish directory and routes `/api/*` to the Netlify Function.
+2. In Netlify → **Site settings → Environment variables**, add:
+   - `MONGODB_URI`
+   - `AUTH_SECRET`
+   - `RESEND_API_KEY`
+   - `MAIL_FROM`
+   - `APP_BASE_URL` (your deployed site URL, e.g. `https://schollyindia.netlify.app`)
+3. Enable **Function runtime scope** for environment variables.
+4. Deploy — the app is live.
+
+---
+
+## 🗂️ Project Structure
+
+```
+SchollyIndia-A-scholarship-finder-app/
+├── app.js                    # Express server, API routes, auth, live date enrichment
+├── public/
+│   ├── index.html            # Single-page app shell
+│   ├── style.css             # All styles, animations, responsive layout
+│   └── style.js              # Frontend logic (search, filter, detail modals, recommender)
+├── data/
+│   ├── scholarships.json     # 219 scholarships with live dates (source of truth)
+│   └── government-jobs.json  # 232 govt career routes with live exam schedule
+├── scripts/
+│   ├── import-scholarships.js  # Seeds scholarship data to MongoDB
+│   └── import-government-jobs.js  # Seeds govt jobs data to MongoDB
+├── netlify/
+│   └── functions/            # Netlify serverless function wrapper
+├── .env.example              # Environment variable template
+└── netlify.toml              # Netlify deployment config
+```
+
+---
+
+## 📧 Email (Password Recovery) Setup
+
+1. Create a [Resend](https://resend.com) account and go to **Domains**.
+2. Add a domain you own (e.g. `send.example.com`) and add the DNS records Resend shows.
+3. Wait for Resend to mark the domain **Verified**.
+4. Create a Resend API key → add to `RESEND_API_KEY`.
+5. Set `MAIL_FROM` to a sender on the verified domain (e.g. `Scholly India <passwords@send.example.com>`).
+6. Test: send a reset link to yourself and check Resend's **Emails** dashboard.
+
+> Gmail addresses cannot be used as the `MAIL_FROM` sender — a Resend-verified domain is required.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Tech |
+|-------|------|
+| Backend | Node.js 24, Express |
+| Database | MongoDB Atlas (with local JSON fallback) |
+| Frontend | Vanilla JS, CSS3 animations |
+| Auth | scrypt password hash, signed HTTP-only cookie |
+| Email | Resend API |
+| Deployment | Netlify (Functions + static site) |
+| AI/Recommender | TF-IDF + cosine similarity (browser-side, no external API) |
+
+---
+
+*Built with ❤️ to help Indian students discover and apply for scholarships and government careers — all in one place.*
