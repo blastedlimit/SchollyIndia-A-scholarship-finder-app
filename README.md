@@ -1,8 +1,8 @@
-# Scholly India
+# Scholly India — Build Your Future
 
 Live site: https://schollyindia.netlify.app/
 
-Scholarship discovery app with an Express API, MongoDB Atlas storage, and a static frontend. The initial scholarship catalogue is imported from `data/scholly.sqlite` into the `schollyindia.scholarships` collection.
+Scholarship and government career discovery app with an Express API, MongoDB Atlas storage, and a static frontend. The tagline is **Build Your Future**. Scholarship records and government recruitment guides are stored in separate MongoDB collections.
 
 ## Run locally
 
@@ -17,7 +17,7 @@ Scholarship discovery app with an Express API, MongoDB Atlas storage, and a stat
    APP_BASE_URL="http://localhost:3000"
    ```
 
-3. Import the starter catalogue with `node scripts/import-to-mongodb.js`.
+3. Import the scholarship catalogue with `node scripts/import-to-mongodb.js` and the government recruitment guide with `npm run seed:jobs`.
 4. Run `npm run dev` and open `http://localhost:3000`.
 
 `.env.example` shows the required variable names and formats. Copy it to `.env`, replace the placeholders, and keep `.env` private. To make password recovery email work, use a sender domain you control:
@@ -31,7 +31,13 @@ Scholarship discovery app with an Express API, MongoDB Atlas storage, and a stat
 
 For a first test, send a reset link to an account you control and check Resend's **Emails** page for delivery status. Keep the Resend API key only in `.env` locally and in Netlify's function-scoped environment variables when deployed.
 
-The API is available at `/api/scholarships`; `/api/health` reports the MongoDB connection status, scholarship count, and whether password-recovery mail is configured. Guests receive a stable preview of about one third of the catalogue. Registered users receive the full catalogue. Account endpoints are `/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`, `/api/auth/forgot-password`, and `/api/auth/reset-password`.
+The APIs are `/api/scholarships` and `/api/jobs`; `/api/health` reports the MongoDB connection status, scholarship count, and whether password-recovery mail is configured. Guests receive a stable preview of about one third of both catalogues. Signed-in users can access the full scholarship and government career catalogues and the full government career planning resources. Account endpoints are `/api/auth/register`, `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`, `/api/auth/forgot-password`, and `/api/auth/reset-password`.
+
+## Government jobs and exams guide
+
+`data/government-jobs.json` contains 232 records derived from the National Exams, State-UT Routes, and Sector Routes sheets in `India_Government_Jobs_Exams_Master_Guide.xlsx`. Import or refresh these records in MongoDB with `npm run seed:jobs`; the importer upserts them by workbook ID into `schollyindia.government_jobs`. The jobs page supports free-text search and filters for route type, state/UT, and broad qualification level, and lets students save routes in their current browser.
+
+This workbook is a recruitment planning reference, not a complete vacancy feed. It says it covers major national recruitment families and gateways across states and union territories, not every post or department. National details are representative baselines; state route details are broad discovery hints. Watch months are not closing dates, and no record proves that recruitment is currently open. Use the linked official starting portal and read the exact current notice, corrigenda, and eligibility rules before applying. This data is not automatically refreshed from those sites.
 
 ## Smart scholarship recommendations
 

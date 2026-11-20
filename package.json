@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "seed": "node scripts/import-scholarships.js"
+    "seed": "node scripts/import-scholarships.js",
+    "seed:jobs": "node scripts/import-government-jobs.js"
   },
   "engines": {
     "node": ">=24"

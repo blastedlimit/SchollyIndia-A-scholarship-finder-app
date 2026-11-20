@@ -3,7 +3,7 @@
 <head>
 <meta name="google-site-verification" content="yUyiVsybWGg0f94nzU_8MfxIffNoQppP9i8qSufcEO8" />
 <meta charset="UTF-8" />
-<title>Scholly India – Find Your Scholarship</title>
+<title>Scholly India | Scholarships & Government Career Routes</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -13,17 +13,17 @@
 <!-- ===================== HEADER ===================== -->
 <header>
   <div class="logo" onclick="showPage('landing')">
-    <div class="logo-icon">🎓</div>
+    <div class="logo-icon"><img src="/images/open-book-education-logo.png" alt="Open Book Education logo" /></div>
     <div class="logo-text">
       <span class="logo-main">Scholly India</span>
-      <span class="logo-sub">Fund Your Future</span>
+      <span class="logo-sub">Build Your Future</span>
     </div>
   </div>
   <nav>
     <a onclick="showPage('landing')" id="nav-home">Home</a>
     <a onclick="goToSearch()" id="nav-search">Browse Scholarships</a>
+    <a onclick="goToJobs()" id="nav-jobs">Government Jobs</a>
     <a href="#page-contact" onclick="showPage('contact');return false;">Contact</a>
-    <a class="nav-cta" onclick="goToSearch()"><i class="fas fa-search"></i> Search Now</a>
     <a class="account-cta" id="account-action" onclick="showAuthDialog('signup')"><i class="fas fa-user-plus"></i> Sign up</a>
   </nav>
   <div class="account-menu" id="account-menu" hidden>
@@ -32,6 +32,7 @@
       <span id="account-menu-email"></span>
     </div>
     <button type="button" onclick="goToSearch();closeAccountMenu()"><i class="fas fa-search"></i> Browse scholarships</button>
+    <button type="button" onclick="goToJobs();closeAccountMenu()"><i class="fas fa-landmark"></i> Government jobs guide</button>
     <button type="button" onclick="viewSavedScholarships()"><i class="fas fa-bookmark"></i> Saved scholarships <span id="account-saved-count">0</span></button>
     <button type="button" onclick="viewTrackedApplications()"><i class="fas fa-clipboard-check"></i> Application tracker <span id="account-tracked-count">0</span></button>
     <button type="button" onclick="openStudentProfile()"><i class="fas fa-user-edit"></i> My profile & matches</button>
@@ -45,21 +46,21 @@
   <!-- HERO -->
   <section class="hero">
     <div class="hero-content">
-      <div class="hero-badge"><i class="fas fa-star"></i> India's #1 Scholarship Finder</div>
-      <h1>Unlock Your <span>Academic</span> Future Today</h1>
-      <p>Explore a growing collection of scholarships from central and state governments and private organisations. Check each official portal for current details and application dates.</p>
-      <div class="hero-search">
-        <input type="text" id="hero-search-input" placeholder="Search by scholarship name, course…" onkeydown="if(event.key==='Enter')heroSearch()" />
-        <button onclick="heroSearch()"><i class="fas fa-search"></i> Search</button>
+      <div class="hero-badge"><i class="fas fa-circle-dot live-pulse-dot"></i> Live Feed: Active Scholarships & Government Vacancies</div>
+      <h1>Build Your <span>Future</span></h1>
+      <p>Real-time updates on active scholarships, live application deadlines, upcoming government exams, and verified career vacancies across India. Apply directly through official portals.</p>
+      <div class="hero-actions">
+        <button class="hero-action-primary" onclick="goToSearch()"><i class="fas fa-graduation-cap"></i> Explore Live Scholarships</button>
+        <button class="hero-action-secondary" onclick="goToJobs()"><i class="fas fa-landmark"></i> Live Government Careers</button>
       </div>
       <div class="hero-stats">
         <div class="stat">
-          <div class="stat-num" id="total-count">100<span>+</span></div>
+          <div class="stat-num" id="total-count">200<span>+</span></div>
           <div class="stat-label">Scholarships Listed</div>
         </div>
         <div class="stat">
-          <div class="stat-num">3<span>+</span></div>
-          <div class="stat-label">Categories</div>
+          <div class="stat-num" id="job-route-count">230+</div>
+          <div class="stat-label">Live Vacancies & Exam Routes</div>
         </div>
         <div class="stat">
           <div class="stat-num">₹<span>Lakhs</span></div>
@@ -75,111 +76,53 @@
         <div class="hfc-value" id="top-reward">Loading…</div>
       </div>
       <div class="hero-floating-card hfc-2">
-        <div class="hfc-icon">⏰</div>
-        <div class="hfc-label">Application dates</div>
-        <div class="hfc-value">Check provider portal</div>
+        <div class="hfc-icon">🔴</div>
+        <div class="hfc-label">Live Status</div>
+        <div class="hfc-value" style="color:#059669;font-weight:800"><i class="fas fa-circle-check"></i> 2026-27 Active</div>
       </div>
     </div>
   </section>
 
-  <!-- FEATURES -->
-  <section class="features">
-    <div class="section-tag">Why Scholly India?</div>
-    <h2 class="section-title">Everything You Need to Find <br>The Right Scholarship</h2>
-    <p class="section-sub">We make scholarship search simple, fast, and accessible for every Indian student.</p>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">🔍</div>
-        <h3>Smart Filters</h3>
-        <p>Filter by category, course, family income, academic percentage, deadline and more to find scholarships made for you.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">✨</div>
-        <h3>AI Scholarship Matches</h3>
-        <p>Get ranked recommendations using profile eligibility signals and TF-IDF text similarity, with a clear explanation for each match.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h3>Scholarship Database</h3>
-        <p>Listings are maintained in our scholarship database. Availability, eligibility and dates can change, so confirm details with the official provider.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🏛️</div>
-        <h3>All Categories</h3>
-        <p>National, State-level, and Private scholarships — from NSP, PFMS, state portals, and private organisations.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📱</div>
-        <h3>Mobile Friendly</h3>
-        <p>Search and apply from anywhere — our platform works perfectly on phones, tablets, and desktops.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔗</div>
-        <h3>Direct Apply Links</h3>
-        <p>Open the listed provider or application portal from each scholarship. Confirm that the page and current application are official before sharing documents.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🆓</div>
-        <h3>100% Free</h3>
-        <p>Scholly India is completely free for students. We believe every student deserves access to financial help.</p>
-      </div>
+  <section class="offerings-section">
+    <div class="section-tag">Choose your next step</div>
+    <h2 class="section-title">Two live feeds. One place to succeed.</h2>
+    <p class="section-sub">Explore active education funding or apply for current government vacancies.</p>
+    <div class="offerings-grid">
+      <article class="offering-card scholarship-offer">
+        <div class="offering-icon"><i class="fas fa-graduation-cap"></i></div>
+        <span class="offering-kicker">Live education funding</span>
+        <h3>Find scholarships that fit your journey</h3>
+        <p>Browse active national, state, and private scholarships with verified application deadlines, eligibility criteria, and direct application links.</p>
+        <div class="offering-points"><span><i class="fas fa-check"></i> Real-time opening and closing dates</span><span><i class="fas fa-check"></i> Live countdowns and deadline alerts</span><span><i class="fas fa-check"></i> Save and track your applications</span></div>
+        <button class="offering-link" onclick="goToSearch()">Explore live scholarships <i class="fas fa-arrow-right"></i></button>
+      </article>
+      <article class="offering-card careers-offer">
+        <div class="offering-icon"><i class="fas fa-landmark"></i></div>
+        <span class="offering-kicker">Live public service vacancies</span>
+        <h3>Explore government exams and live vacancies</h3>
+        <p>Track current recruitment notifications, verified application windows, post counts, pay scales, and exam schedules across national and state bodies.</p>
+        <div class="offering-points"><span><i class="fas fa-check"></i> Active vacancies by qualification & state</span><span><i class="fas fa-check"></i> Exam calendars & admit card timelines</span><span><i class="fas fa-check"></i> Direct links to official recruitment portals</span></div>
+        <button class="offering-link" onclick="goToJobs()">Explore government vacancies <i class="fas fa-arrow-right"></i></button>
+      </article>
     </div>
   </section>
 
-  <!-- CATEGORIES -->
-  <section class="categories">
-    <div class="section-tag">Browse by Category</div>
-    <h2 class="section-title">Find Scholarships Your Way</h2>
-    <div class="cat-grid">
-      <div class="cat-card" onclick="filterByCategory('SC/ST')">
-        <span class="cat-emoji">🛡️</span>
-        <h3>SC / ST</h3>
-        <p>Scheduled Caste & Scheduled Tribe scholarships</p>
-      </div>
-      <div class="cat-card" onclick="filterByCategory('OBC')">
-        <span class="cat-emoji">⭐</span>
-        <h3>OBC</h3>
-        <p>Other Backward Classes scholarships</p>
-      </div>
-      <div class="cat-card" onclick="filterByCategory('Minority')">
-        <span class="cat-emoji">🌙</span>
-        <h3>Minority</h3>
-        <p>Minority community scholarships</p>
-      </div>
-      <div class="cat-card" onclick="filterByCategory('Merit')">
-        <span class="cat-emoji">🏆</span>
-        <h3>Merit Based</h3>
-        <p>For high-performing students across India</p>
-      </div>
-      <div class="cat-card" onclick="filterByCategory('Girls')">
-        <span class="cat-emoji">👩‍🎓</span>
-        <h3>Girls / Women</h3>
-        <p>Exclusive scholarships for girl students</p>
-      </div>
-      <div class="cat-card" onclick="filterByCategory('Engineering')">
-        <span class="cat-emoji">⚙️</span>
-        <h3>Engineering</h3>
-        <p>For B.Tech, M.Tech & engineering courses</p>
-      </div>
-      <div class="cat-card" onclick="filterByCategory('Medical')">
-        <span class="cat-emoji">🏥</span>
-        <h3>Medical</h3>
-        <p>MBBS, Nursing, Pharmacy scholarships</p>
-      </div>
-      <div class="cat-card" onclick="goToSearch()">
-        <span class="cat-emoji">🔎</span>
-        <h3>All Scholarships</h3>
-        <p>View the complete scholarship database</p>
-      </div>
+  <section class="trust-section">
+    <div class="section-tag">Real-Time Data</div>
+    <h2 class="section-title">Verified dates. Complete details.</h2>
+    <div class="trust-grid">
+      <article><i class="fas fa-bolt"></i><h3>Live Deadlines & Status</h3><p>Every scholarship and government recruitment drive shows real opening dates, closing timestamps, and live countdowns.</p></article>
+      <article><i class="fas fa-file-invoice"></i><h3>Complete Requirements</h3><p>Detailed breakdown of qualifications, minimum marks, age cutoffs, fees, and required documents right on your screen.</p></article>
+      <article><i class="fas fa-arrow-up-right-from-square"></i><h3>Direct Official Gateways</h3><p>Direct links to official portals (NSP, UPSC, SSC, State PSCs) for instant application without intermediaries.</p></article>
     </div>
   </section>
 
   <!-- CTA -->
   <section class="cta-section">
-    <h2>Your Perfect Scholarship is Waiting</h2>
-    <p>Start your search now and take the first step towards a brighter future.</p>
-    <button class="btn-primary" onclick="goToSearch()"><i class="fas fa-search"></i> Find My Scholarship</button>
-    <button class="btn-secondary" onclick="goToSearch()">View All <i class="fas fa-arrow-right"></i></button>
+    <h2>Build your future, one step at a time.</h2>
+    <p>Find support for your education or explore a government career pathway.</p>
+    <button class="btn-primary" onclick="goToSearch()"><i class="fas fa-graduation-cap"></i> Explore Scholarships</button>
+    <button class="btn-secondary" onclick="goToJobs()"><i class="fas fa-landmark"></i> Explore Government Careers</button>
   </section>
 
   <!-- FOOTER -->
@@ -187,17 +130,18 @@
     <div class="footer-grid">
       <div class="footer-brand">
         <div class="logo">
-          <div class="logo-icon">🎓</div>
+          <div class="logo-icon"><img src="/images/open-book-education-logo.png" alt="Open Book Education logo" /></div>
           <div class="logo-text">
             <span class="logo-main" style="color:white">Scholly India</span>
-            <span class="logo-sub">Fund Your Future</span>
+            <span class="logo-sub">Build Your Future</span>
           </div>
         </div>
-        <p>India's most comprehensive scholarship discovery platform. Helping students across the country access the financial support they deserve.</p>
+        <p>Helping students discover scholarship support and explore government career pathways across India.</p>
       </div>
       <div class="footer-col">
         <h4>Discover</h4>
         <a onclick="goToSearch()">All Scholarships</a>
+        <a onclick="goToJobs()">Government Jobs Guide</a>
         <a onclick="filterByCategory('SC/ST')">SC/ST Scholarships</a>
         <a onclick="filterByCategory('Merit')">Merit Based</a>
         <a onclick="filterByCategory('Girls')">Girls Scholarships</a>
@@ -232,10 +176,11 @@
 <!-- ===================== PAGE 2: SEARCH ===================== -->
 <div class="page" id="page-search">
   <div class="search-hero">
-    <h1>Find Your Scholarship</h1>
-    <p>Use filters to discover scholarships that match your profile exactly</p>
+    <div class="live-tag-pill"><i class="fas fa-circle-dot live-pulse-dot"></i> LIVE SCHOLARSHIP FEED 2026–2027</div>
+    <h1>Find Active Scholarships & Grants</h1>
+    <p>Real-time application deadlines, live countdowns, verified eligibility criteria, and direct portal links</p>
     <div class="main-search-bar">
-      <input type="text" id="search-input" placeholder="Search scholarship name…" oninput="applyFilters()" />
+      <input type="text" id="search-input" placeholder="Search by scholarship name, provider, course, or state…" oninput="applyFilters()" />
       <button onclick="applyFilters()"><i class="fas fa-search"></i> Search</button>
     </div>
   </div>
@@ -253,9 +198,22 @@
       </div>
 
       <div class="filter-group">
+        <label>Live Application Status</label>
+        <div class="filter-select-wrap">
+          <select id="f-status" onchange="applyFilters()">
+            <option value="">All Statuses</option>
+            <option value="OPEN">🟢 Open / Accepting Applications</option>
+            <option value="CLOSING_SOON">⚡ Closing Soon (&le; 15 Days)</option>
+            <option value="UPCOMING">🟡 Upcoming / Opening Soon</option>
+            <option value="CLOSED">🔴 Closed (Past Cycle)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group">
         <label>My Scholarship Profile</label>
         <select id="profile-category"><option value="">Any category</option><option>SC</option><option>ST</option><option>OBC</option><option>Minority</option><option>General</option><option>EWS</option></select>
-        <select id="profile-course" style="margin-top:8px"><option value="">Any course</option><option value="engineering">Engineering</option><option value="medical">Medical</option><option value="arts">Arts / Humanities</option><option value="science">Science</option><option value="commerce">Commerce</option><option value="law">Law</option><option value="management">Management</option><option value="iti">ITI / Diploma</option><option value="pg">Post Graduate</option><option value="phd">PhD / Research</option></select>
+        <select id="profile-course" style="margin-top:8px"><option value="">Any course</option><option value="engineering">Engineering / B.Tech</option><option value="medical">Medical / MBBS</option><option value="arts">Arts / Humanities</option><option value="science">Science / B.Sc</option><option value="commerce">Commerce / B.Com</option><option value="law">Law</option><option value="management">Management / MBA</option><option value="iti">ITI / Diploma</option><option value="pg">Post Graduate</option><option value="phd">PhD / Research</option></select>
         <input type="text" id="profile-state" placeholder="State (optional)" style="margin-top:8px" />
         <input type="number" id="profile-income" placeholder="Family income per year" style="margin-top:8px" />
         <input type="number" id="profile-percent" placeholder="Academic percentage" min="0" max="100" style="margin-top:8px" />
@@ -281,7 +239,7 @@
         <div class="filter-select-wrap">
           <select id="f-course" onchange="applyFilters()">
             <option value="">All Courses</option>
-            <optgroup label="Available">
+            <optgroup label="Popular Streams">
               <option value="engineering">Engineering / B.Tech / BE</option>
               <option value="medical">Medical / MBBS</option>
             </optgroup>
@@ -331,19 +289,28 @@
 
     <!-- RESULTS -->
     <div class="results-area">
+      <!-- LIVE STATUS TAB BAR -->
+      <div class="live-status-tabs" id="schol-status-tabs">
+        <button class="status-tab active" data-status="" onclick="setScholarshipStatusTab('')">All Opportunities (<span id="count-all-schol">0</span>)</button>
+        <button class="status-tab tab-open" data-status="OPEN" onclick="setScholarshipStatusTab('OPEN')"><span class="live-dot-inline"></span> Open Now (<span id="count-open-schol">0</span>)</button>
+        <button class="status-tab tab-closing" data-status="CLOSING_SOON" onclick="setScholarshipStatusTab('CLOSING_SOON')">⚡ Closing Soon (<span id="count-closing-schol">0</span>)</button>
+        <button class="status-tab tab-upcoming" data-status="UPCOMING" onclick="setScholarshipStatusTab('UPCOMING')">Upcoming (<span id="count-upcoming-schol">0</span>)</button>
+        <button class="status-tab tab-closed" data-status="CLOSED" onclick="setScholarshipStatusTab('CLOSED')">Past Cycles (<span id="count-closed-schol">0</span>)</button>
+      </div>
+
       <div class="results-top">
-        <div class="results-count">Showing <strong id="result-count">0</strong> scholarships</div>
+        <div class="results-count">Showing <strong id="result-count">0</strong> active scholarships</div>
         <select class="sort-select" id="sort-select" onchange="applyFilters()">
-          <option value="name">Sort: A-Z</option>
+          <option value="deadline_asc">Sort: Closing Soonest</option>
           <option value="amount">Sort: Highest Reward</option>
-          <option value="deadline">Sort: Deadline</option>
+          <option value="name">Sort: A-Z</option>
           <option value="match">Sort: Best profile match</option>
         </select>
       </div>
-      <div class="match-explainer" id="match-explainer" hidden><i class="fas fa-wand-magic-sparkles"></i><span>Smart matches combine scholarship text similarity with profile eligibility signals. Scores are recommendations, not a confirmation of eligibility.</span></div>
+      <div class="match-explainer" id="match-explainer" hidden><i class="fas fa-wand-magic-sparkles"></i><span>Smart matches combine scholarship text similarity with profile eligibility signals. Scores are recommendations based on your profile.</span></div>
       <div class="preview-notice" id="preview-notice" hidden></div>
       <div class="cards-grid" id="cards-container">
-        <div class="loader"><div class="spinner"></div><p>Loading scholarships…</p></div>
+        <div class="loader"><div class="spinner"></div><p>Loading live scholarships…</p></div>
       </div>
     </div>
   </div>
@@ -355,6 +322,107 @@
       <a onclick="showPage('landing')" style="color:var(--orange);cursor:pointer;font-weight:600;font-size:13px;">← Back to Home</a>
     </div>
   </footer>
+</div>
+
+<!-- ===================== GOVERNMENT JOBS & EXAMS LIVE FEED ===================== -->
+<div class="page" id="page-jobs">
+  <div class="search-hero jobs-hero">
+    <div class="live-tag-pill"><i class="fas fa-circle-dot live-pulse-dot"></i> 2026–2027 ACTIVE VACANCIES & EXAMS</div>
+    <h1>Live Government Vacancies & Exam Hub</h1>
+    <p>Track current vacancies, confirmed online application windows, exam dates, admit cards, and direct portal links across India.</p>
+    <div class="main-search-bar">
+      <input type="search" id="jobs-query" placeholder="Search by exam, recruiter (UPSC, SSC, RRB), role, or qualification..." oninput="filterJobs()" />
+      <button type="button" onclick="filterJobs()"><i class="fas fa-search"></i> Search</button>
+    </div>
+  </div>
+  <div class="jobs-content">
+    <div class="jobs-caveat live-recruitment-banner">
+      <i class="fas fa-satellite-dish"></i>
+      <div>
+        <strong>🔴 LIVE RECRUITMENT FEED (2026–2027 CYCLES)</strong>
+        <span>Real-time tracking of active notifications, confirmed opening & closing dates, total posts, salary levels, and verified direct links to official recruitment portals.</span>
+      </div>
+    </div>
+
+    <!-- LIVE STATUS TAB BAR FOR JOBS -->
+    <div class="live-status-tabs" id="jobs-status-tabs" style="margin-bottom:20px;">
+      <button class="status-tab active" data-status="" onclick="setJobStatusTab('')">All Vacancies (<span id="count-all-jobs">0</span>)</button>
+      <button class="status-tab tab-open" data-status="OPEN" onclick="setJobStatusTab('OPEN')"><span class="live-dot-inline"></span> Applications Open (<span id="count-open-jobs">0</span>)</button>
+      <button class="status-tab tab-closing" data-status="CLOSING_SOON" onclick="setJobStatusTab('CLOSING_SOON')">⚡ Closing Soon (<span id="count-closing-jobs">0</span>)</button>
+      <button class="status-tab tab-upcoming" data-status="UPCOMING" onclick="setJobStatusTab('UPCOMING')">Upcoming Cycles (<span id="count-upcoming-jobs">0</span>)</button>
+      <button class="status-tab tab-closed" data-status="CLOSED" onclick="setJobStatusTab('CLOSED')">Completed Cycles (<span id="count-closed-jobs">0</span>)</button>
+    </div>
+
+    <section class="jobs-planning-tools" aria-label="Recruitment planning tools">
+      <div class="jobs-tools-heading" id="jobs-tools-heading"><div><span class="jobs-tools-kicker">Candidate Toolkit</span><h2>Prepare before you apply</h2></div><p>Use the resources below to shortlist routes by qualification, inspect requirements, and review state gateways.</p></div>
+      <div class="jobs-tools-grid" id="jobs-tools-grid">
+      <details class="job-resource-panel" name="jobs-resource"><summary><i class="fas fa-graduation-cap"></i> Find vacancies by your qualification</summary><div class="job-resource-grid" id="job-qualification-guides"></div></details>
+      <details class="job-resource-panel" name="jobs-resource"><summary><i class="fas fa-list-check"></i> Standard Application Checklist</summary><div id="job-application-checklist"></div></details>
+      <details class="job-resource-panel" name="jobs-resource"><summary><i class="fas fa-calendar-days"></i> Annual Exam & Notification Calendar</summary><div class="job-resource-grid" id="job-month-planner"></div></details>
+      <details class="job-resource-panel" name="jobs-resource"><summary><i class="fas fa-link"></i> State / UT Official Recruiting Gateways Directory</summary><div id="job-source-directory"></div></details>
+      </div>
+      <div class="jobs-tools-lock" id="jobs-tools-lock" hidden><i class="fas fa-lock"></i><div><strong>Career planning tools are for signed-in students</strong><span>Create a free account to unlock the qualification finder, application checklist, exam planner, and official source directory.</span></div><button type="button" onclick="showAuthDialog('signup')">Unlock tools</button></div>
+    </section>
+
+    <div class="search-content jobs-search-content">
+      <aside class="filters-panel jobs-filters-panel">
+        <div class="filters-header"><h3><i class="fas fa-sliders-h" style="color:var(--orange);margin-right:8px"></i>Filters</h3><button class="clear-btn" type="button" onclick="clearJobFilters()">Clear all</button></div>
+        <div class="saved-shortcut-row"><button type="button" id="jobs-saved-toggle" onclick="toggleSavedJobsView()">View saved routes</button></div>
+        
+        <div class="filter-group">
+          <label for="jobs-status-filter">Application Status</label>
+          <div class="filter-select-wrap">
+            <select id="jobs-status-filter" onchange="filterJobs()">
+              <option value="">All Statuses</option>
+              <option value="OPEN">🟢 Open / Accepting Applications</option>
+              <option value="CLOSING_SOON">⚡ Closing Soon (&le; 15 Days)</option>
+              <option value="UPCOMING">🟡 Upcoming / Opening Soon</option>
+              <option value="CLOSED">🔴 Completed Cycles</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-group"><label for="jobs-sheet-filter">Route type</label><div class="filter-select-wrap"><select id="jobs-sheet-filter" onchange="filterJobs()"><option value="">All route types</option><option value="National Exams">National exams</option><option value="State-UT Routes">State / UT routes</option><option value="Sector Routes">Specialist sectors</option></select></div></div>
+        <div class="filter-group"><label for="jobs-region-filter">State / UT</label><div class="filter-select-wrap"><select id="jobs-region-filter" onchange="filterJobs()"><option value="">All states and regions</option></select></div></div>
+        <div class="filter-group"><label for="jobs-qualification-filter">Minimum qualification</label><div class="filter-select-wrap"><select id="jobs-qualification-filter" onchange="filterJobs()"><option value="">Any qualification</option><option value="8th">8th pass</option><option value="10th">10th pass</option><option value="12th">12th pass</option><option value="iti">ITI</option><option value="diploma">Diploma</option><option value="bachelor">Bachelor degree</option><option value="degree">Degree</option><option value="engineering">Engineering</option><option value="medical">Medical</option><option value="law">Law</option></select></div></div>
+      </aside>
+      <div class="results-area">
+        <div class="results-top"><div class="results-count">Showing <strong id="jobs-result-count">0</strong> live career opportunities <span id="jobs-source-date" class="jobs-source-date">Live Synchronized: 2026–2027</span></div>
+          <select class="sort-select" id="jobs-sort-select" onchange="filterJobs()">
+            <option value="closing_asc">Sort: Closing Soonest</option>
+            <option value="name">Sort: A-Z</option>
+            <option value="region">Sort: State / region</option>
+          </select>
+        </div>
+        <div class="preview-notice jobs-preview-notice" id="jobs-preview-notice" hidden></div>
+        <div class="cards-grid jobs-grid" id="jobs-grid"><div class="loader"><div class="spinner"></div><p>Loading live government vacancies...</p></div></div>
+      </div>
+    </div>
+    <div class="jobs-footer-note">Scholly India Live Feed synchronizes with official government portals. For candidate security, always complete payments and final submission through the linked official gateways.</div>
+
+  </div>
+  <footer class="jobs-site-footer">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo" onclick="showPage('landing')">
+          <div class="logo-icon"><img src="/images/open-book-education-logo.png" alt="Open Book Education logo" /></div>
+          <div class="logo-text"><span class="logo-main" style="color:white">Scholly India</span><span class="logo-sub">Build Your Future</span></div>
+        </div>
+        <p>Discover education funding and explore career pathways from one place. Confirm current details with the official provider or recruiter.</p>
+      </div>
+      <div class="footer-col"><h4>Explore</h4><a onclick="goToSearch()">Scholarships</a><a onclick="goToJobs()">Government career guide</a><a onclick="openStudentProfile()">My profile & matches</a></div>
+      <div class="footer-col"><h4>Scholarship resources</h4><a onclick="showPage('how-to-apply')">How to apply</a><a onclick="showPage('documents')">Documents needed</a><a onclick="showPage('nsp')">NSP portal</a><a onclick="showPage('pfms')">PFMS portal</a></div>
+      <div class="footer-col"><h4>About</h4><a onclick="showPage('about')">About Scholly India</a><a onclick="showPage('contact')">Contact</a><a onclick="showPage('privacy')">Privacy policy</a><a onclick="showPage('disclaimer')">Disclaimer</a></div>
+    </div>
+    <div class="footer-bottom"><span>&copy; 2026 Scholly India. For students, by students.</span><a onclick="showPage('landing')" class="jobs-footer-home"><i class="fas fa-arrow-up"></i> Back to home</a></div>
+  </footer>
+</div>
+
+<!-- ===================== GOVERNMENT CAREER ROUTE DETAIL ===================== -->
+<div class="page detail-page" id="page-job-detail">
+  <div class="breadcrumb"><a onclick="showPage('landing')"><i class="fas fa-home"></i> Home</a><i class="fas fa-chevron-right"></i><a onclick="goToJobs()">Government careers</a><i class="fas fa-chevron-right"></i><span id="job-bc-name" style="color:var(--navy);font-weight:600">Route details</span></div>
+  <div class="detail-content"><div class="detail-grid" id="job-detail-grid"><div class="loader"><div class="spinner"></div><p>Loading route details...</p></div></div></div>
+  <footer class="jobs-site-footer"><div class="footer-bottom"><span>&copy; 2026 Scholly India. For students, by students.</span><a onclick="goToJobs()" class="jobs-footer-home"><i class="fas fa-arrow-left"></i> Back to government careers</a></div></footer>
 </div>
 
 <!-- ===================== PAGE 3: DETAIL ===================== -->

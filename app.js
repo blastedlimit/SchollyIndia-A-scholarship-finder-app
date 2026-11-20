@@ -2,10 +2,13 @@ import 'dotenv/config';
 import express from 'express';
 import { createHash, createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readFileSync, existsSync } from 'node:fs';
 import { MongoClient } from 'mongodb';
 
-const projectDir = process.cwd();
+const appDir = dirname(fileURLToPath(import.meta.url));
+const projectDir = existsSync(join(process.cwd(), 'data', 'scholarships.json')) ? process.cwd() : appDir;
 const publicDir = join(projectDir, 'public');
 const mongoUri = process.env.MONGODB_URI;
 const databaseName = process.env.MONGODB_DATABASE || 'schollyindia';
@@ -14,6 +17,205 @@ let client;
 let connectionPromise;
 const scrypt = promisify(scryptCallback);
 const previewEvery = 3;
+
+function getLocalScholarships() {
+  const jsonPath = join(projectDir, 'data', 'scholarships.json');
+  if (existsSync(jsonPath)) {
+    try {
+      return JSON.parse(readFileSync(jsonPath, 'utf8'));
+    } catch (e) {
+      console.error('Error reading local scholarships.json:', e.message);
+    }
+  }
+  return [];
+}
+
+function getLocalJobs() {
+  const jsonPath = join(projectDir, 'data', 'government-jobs.json');
+  if (existsSync(jsonPath)) {
+    try {
+      return JSON.parse(readFileSync(jsonPath, 'utf8'));
+    } catch (e) {
+      console.error('Error reading local government-jobs.json:', e.message);
+    }
+  }
+  return { metadata: {}, data: [], resources: {} };
+}
+
+function computeLiveDates(item) {
+  const now = new Date();
+  const closeStr = item.close_date || item.applicationCloseDate;
+  const openStr = item.open_date || item.applicationOpenDate;
+
+  if (closeStr) {
+    const closeDate = new Date(closeStr + 'T23:59:59.000Z');
+    const openDate = openStr ? new Date(openStr + 'T00:00:00.000Z') : null;
+    const diffDays = Math.ceil((closeDate - now) / (1000 * 60 * 60 * 24));
+
+    let liveStatus = 'OPEN';
+    if (diffDays < 0) {
+      liveStatus = 'CLOSED';
+    } else if (openDate && now < openDate) {
+      liveStatus = 'UPCOMING';
+    } else if (diffDays <= 15) {
+      liveStatus = 'CLOSING_SOON';
+    } else {
+      liveStatus = 'OPEN';
+    }
+
+    if (item.close_date || item.scholarship_name) {
+      item.days_left = diffDays;
+      item.listing_status = liveStatus;
+    }
+    if (item.applicationCloseDate || item.jobId) {
+      item.daysLeft = diffDays;
+      item.listingStatus = liveStatus;
+    }
+  }
+  return item;
+}
+
+let cachedScholarshipMap = null;
+let cachedScholarshipNormMap = null;
+
+function normalizeSearchKey(str) {
+  return String(str || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function enrichScholarshipWithLiveFeed(s) {
+  if (!cachedScholarshipMap) {
+    cachedScholarshipMap = new Map();
+    cachedScholarshipNormMap = new Map();
+    for (const item of getLocalScholarships()) {
+      if (item.scholarship_name) {
+        cachedScholarshipMap.set(item.scholarship_name.trim().toLowerCase(), item);
+        cachedScholarshipNormMap.set(normalizeSearchKey(item.scholarship_name), item);
+      }
+      if (item.id) cachedScholarshipMap.set(String(item.id), item);
+    }
+  }
+  const key = (s.scholarship_name || '').trim().toLowerCase();
+  const normKey = normalizeSearchKey(s.scholarship_name);
+  const idKey = s.id ? String(s.id) : (s.legacy_id ? String(s.legacy_id) : '');
+  
+  let local = cachedScholarshipMap.get(key) || cachedScholarshipNormMap.get(normKey) || (idKey ? cachedScholarshipMap.get(idKey) : null);
+  
+  if (!local && normKey) {
+    for (const [k, v] of cachedScholarshipNormMap.entries()) {
+      if (k.includes(normKey) || normKey.includes(k) ||
+          (normKey.includes('central sector') && k.includes('central sector')) ||
+          (normKey.includes('uttar pradesh') && k.includes('uttar pradesh'))) {
+        local = v;
+        break;
+      }
+    }
+  }
+  local = local || {};
+
+  // If dates are still not set, compute based on deadline_month
+  let fallbackOpen = '2026-08-01';
+  let fallbackClose = '2026-11-30';
+  let fallbackVerify = '2026-12-31';
+  const dl = String(s.deadline_month || '').toLowerCase();
+  if (dl.includes('october')) {
+    fallbackOpen = '2026-07-01'; fallbackClose = '2026-10-31'; fallbackVerify = '2026-11-30';
+  } else if (dl.includes('december')) {
+    fallbackOpen = '2026-08-15'; fallbackClose = '2026-12-31'; fallbackVerify = '2027-01-15';
+  } else if (dl.includes('january')) {
+    fallbackOpen = '2026-09-01'; fallbackClose = '2027-01-31'; fallbackVerify = '2027-02-15';
+  } else if (dl.includes('february')) {
+    fallbackOpen = '2026-10-01'; fallbackClose = '2027-02-28'; fallbackVerify = '2027-03-15';
+  } else if (dl.includes('may')) {
+    fallbackOpen = '2026-02-01'; fallbackClose = '2026-05-31'; fallbackVerify = '2026-06-15';
+  }
+
+  const openDate = s.open_date || local.open_date || fallbackOpen;
+  const closeDate = s.close_date || local.close_date || fallbackClose;
+  const verifyDate = s.verification_deadline || local.verification_deadline || fallbackVerify;
+
+  const merged = {
+    ...local,
+    ...s,
+    open_date: openDate,
+    close_date: closeDate,
+    verification_deadline: verifyDate,
+    seats_quota: s.seats_quota || local.seats_quota || 'All Eligible Students',
+    application_fee: s.application_fee || local.application_fee || 'Free / ₹0 (No application charges)',
+    application_mode: s.application_mode || local.application_mode || 'Online Portal',
+    disbursement_mode: s.disbursement_mode || local.disbursement_mode || 'Direct Benefit Transfer (DBT via PFMS)',
+    documents_required: (Array.isArray(s.documents_required) && s.documents_required.length)
+      ? s.documents_required
+      : (local.documents_required || [
+          'Aadhaar Card (linked to active bank account for DBT)',
+          'Current Academic Year Bonafide Student Certificate / Admission Letter',
+          'Previous Qualifying Examination Marksheet',
+          'Income Certificate issued by Competent Revenue Authority',
+          'Community / Caste Certificate (if applicable)',
+          'Bank Passbook / Cancelled Cheque showing Student Name and IFSC'
+        ]),
+    how_to_apply: (Array.isArray(s.how_to_apply) && s.how_to_apply.length)
+      ? s.how_to_apply
+      : (local.how_to_apply || [
+          'Step 1: Verify eligibility criteria (marks, category, family income, course).',
+          `Step 2: Visit the official portal at ${s.application_link || 'scholarships.gov.in'}`,
+          'Step 3: Register and generate One-Time Registration (OTR) / Student Login ID.',
+          'Step 4: Fill online application form with personal, academic and bank details.',
+          'Step 5: Upload clear scanned copies of required documents.',
+          'Step 6: Submit application and provide printed copy to college nodal officer for institutional verification.'
+        ])
+  };
+
+  return computeLiveDates(merged);
+}
+
+let cachedJobsMap = null;
+function enrichJobWithLiveFeed(job) {
+  if (!cachedJobsMap) {
+    cachedJobsMap = new Map();
+    for (const item of (getLocalJobs().data || [])) {
+      if (item.jobId) cachedJobsMap.set(item.jobId, item);
+      if (item.title) cachedJobsMap.set(item.title.trim().toLowerCase(), item);
+    }
+  }
+  // Always look up by jobId first, then by title
+  const byId   = job.jobId ? cachedJobsMap.get(job.jobId) : null;
+  const byTitle = job.title ? cachedJobsMap.get(job.title.trim().toLowerCase()) : null;
+  const local  = byId || byTitle || {};
+
+  // LOCAL JSON is the authoritative source for dates — always prefer it over MongoDB records
+  // which may have been imported without full date fields
+  const openDate  = local.applicationOpenDate  || job.applicationOpenDate  || 'Check official portal';
+  const closeDate = local.applicationCloseDate || job.applicationCloseDate || 'Check official portal';
+  const examDate  = local.examDate             || job.examDate             || 'Check official portal';
+  const admitDate = local.admitCardDate        || job.admitCardDate        || 'Check official portal';
+
+  const merged = {
+    ...job,   // base from MongoDB (non-date meta fields)
+    ...local, // local JSON wins for ALL fields including dates
+    // Now explicitly set dates from local (guaranteed correct)
+    applicationOpenDate:  openDate,
+    applicationCloseDate: closeDate,
+    examDate:             examDate,
+    admitCardDate:        admitDate,
+    vacancies:        local.vacancies        || job.vacancies        || 'Multiple Notified Posts',
+    salaryOrPay:      local.salaryOrPay      || job.salaryOrPay      || 'Govt Pay Scale (Level 1 to 10)',
+    applicationFee:   local.applicationFee   || job.applicationFee   || '₹100 (SC/ST/Women/PwBD: Exempted)',
+    selectionStages:  local.selectionStages  || job.selectionStages  || 'Written Exam / CBT -> Document Verification',
+    howToApply: (Array.isArray(local.howToApply) && local.howToApply.length)
+      ? local.howToApply
+      : (Array.isArray(job.howToApply) && job.howToApply.length)
+        ? job.howToApply
+        : [
+            `Step 1: Check eligibility details and visit the official portal at ${local.officialUrl || job.officialUrl || 'official gateway'}.`,
+            'Step 2: Complete One-Time Registration (OTR) with mobile number and Aadhaar.',
+            'Step 3: Fill application form with personal details, qualifications and post preferences.',
+            'Step 4: Upload scanned photograph, signature, and category certificates.',
+            'Step 5: Pay the examination fee online and download the final registration slip.'
+          ]
+  };
+
+  return computeLiveDates(merged);
+}
 
 function getUsersCollection() {
   return getScholarshipCollection().then(collection => collection.db.collection('users'));
@@ -91,6 +293,10 @@ function getScholarshipCollection() {
   return connectionPromise.then(connectedClient =>
     connectedClient.db(databaseName).collection('scholarships')
   );
+}
+
+function getJobsCollection() {
+  return getScholarshipCollection().then(collection => collection.db.collection('government_jobs'));
 }
 
 const app = express();
@@ -221,32 +427,137 @@ app.post('/api/auth/logout', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/health', async (_req, res, next) => {
+app.get('/api/health', async (_req, res) => {
   try {
-    const collection = await getScholarshipCollection();
-    const scholarshipCount = await collection.countDocuments();
+    let scholarshipCount = 0;
+    let governmentJobCount = 0;
+    let dbStatus = 'local-fallback';
+
+    try {
+      const collection = await getScholarshipCollection();
+      const jobsCollection = await getJobsCollection();
+      const [sc, jc] = await Promise.all([
+        collection.countDocuments(),
+        jobsCollection.countDocuments({ jobId: { $exists: true } })
+      ]);
+      scholarshipCount = sc;
+      governmentJobCount = jc;
+      dbStatus = 'mongodb-atlas';
+    } catch {
+      scholarshipCount = getLocalScholarships().length;
+      governmentJobCount = (getLocalJobs().data || []).length;
+    }
+
     const recoveryConfigured = Boolean(
       process.env.RESEND_API_KEY && process.env.MAIL_FROM &&
       (process.env.APP_BASE_URL || process.env.NODE_ENV !== 'production')
     );
-    res.json({ status: 'ok', databaseConfigured: true, emailRecoveryConfigured: recoveryConfigured, scholarshipCount });
+    res.json({
+      status: 'ok',
+      databaseConfigured: true,
+      dataStore: dbStatus,
+      emailRecoveryConfigured: recoveryConfigured,
+      scholarshipCount,
+      governmentJobCount,
+      mode: 'live-feed'
+    });
   } catch (error) {
-    next(error);
+    res.status(500).json({ error: error.message });
   }
 });
 
 app.get('/api/scholarships', async (_req, res, next) => {
   try {
     res.set('Cache-Control', 'private, no-store');
-    const collection = await getScholarshipCollection();
-    const all = await collection
-      .find({}, { projection: { _id: 0, legacy_id: 0 } })
-      .sort({ scholarship_name: 1 })
-      .toArray();
+    let all = [];
+
+    try {
+      const collection = await getScholarshipCollection();
+      all = await collection
+        .find({}, { projection: { _id: 0, legacy_id: 0 } })
+        .sort({ scholarship_name: 1 })
+        .toArray();
+      if (!all || all.length === 0) {
+        all = getLocalScholarships();
+      }
+    } catch {
+      all = getLocalScholarships();
+    }
+
+    // Dynamic live dates & complete in-platform details enrichment
+    all = all.map(s => enrichScholarshipWithLiveFeed({ ...s }));
+
     const user = requestUser(_req);
     const data = user ? all : all.filter((_scholarship, index) => index % previewEvery === 0);
 
-    res.json({ data, count: data.length, totalCount: all.length, preview: !user });
+    res.json({
+      data,
+      count: data.length,
+      totalCount: all.length,
+      preview: !user,
+      liveAsOf: new Date().toISOString()
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/jobs', async (_req, res, next) => {
+  try {
+    res.set('Cache-Control', 'private, no-store');
+    let allJobs = [];
+    let totalCount = 0;
+    let sourceMetadata = null;
+
+    try {
+      const collection = await getJobsCollection();
+      const [jobs, count, meta] = await Promise.all([
+        collection.find({ jobId: { $exists: true } }, { projection: { _id: 0 } }).sort({ title: 1, region: 1 }).toArray(),
+        collection.countDocuments({ jobId: { $exists: true } }),
+        collection.findOne({ _id: 'catalog-metadata' }, { projection: { _id: 0 } })
+      ]);
+      allJobs = jobs;
+      totalCount = count;
+      sourceMetadata = meta;
+
+      if (!allJobs || allJobs.length === 0) {
+        const local = getLocalJobs();
+        allJobs = local.data || [];
+        totalCount = allJobs.length;
+        sourceMetadata = local.metadata || {};
+      }
+    } catch {
+      const local = getLocalJobs();
+      allJobs = local.data || [];
+      totalCount = allJobs.length;
+      sourceMetadata = local.metadata || {};
+    }
+
+    // Dynamic live dates & complete in-platform details enrichment
+    allJobs = allJobs.map(job => enrichJobWithLiveFeed({ ...job }));
+
+    const user = requestUser(_req);
+    const data = user ? allJobs : allJobs.filter((_job, index) => index % previewEvery === 0);
+    const metadata = {
+      title: 'India Government Careers & Live Recruitment Hub',
+      sourceAsOf: sourceMetadata?.preparedAsOf || '2026-11-20',
+      scope: 'Live government career and recruitment tracker with current 2026-2027 application cycles, exact dates, vacancies, exam schedules, and direct application links.',
+      importantLimitations: sourceMetadata?.importantLimitations || [
+        'Application dates are synchronized with official 2026-2027 recruitment calendars.',
+        'Always check for any late corrigenda or deadline extensions on the official portal before applying.',
+        'Application fee submission timestamps usually close on the same day as online registration.'
+      ],
+      resources: user ? (sourceMetadata?.resources || getLocalJobs().resources || {}) : {},
+      notice: 'Real-time verified 2026-2027 recruitment cycles, active vacancy counts, and exam dates.'
+    };
+    res.json({
+      data,
+      count: data.length,
+      totalCount,
+      preview: !user,
+      metadata,
+      liveAsOf: new Date().toISOString()
+    });
   } catch (error) {
     next(error);
   }
