@@ -16,8 +16,8 @@ const appDir = dirname(fileURLToPath(import.meta.url));
 const candidateDirs = [process.cwd(), appDir, join(appDir, '..'), join(appDir, '../..')];
 const projectDir = candidateDirs.find(dir => existsSync(join(dir, 'data', 'scholarships.json'))) || process.cwd();
 const publicDir = join(projectDir, 'public');
-const mongoUri = process.env.MONGODB_URI;
-const databaseName = process.env.MONGODB_DATABASE || 'schollyindia';
+const mongoUri = (process.env.MONGODB_URI || '').trim().replace(/^["']|["']$/g, '');
+const databaseName = (process.env.MONGODB_DATABASE || 'schollyindia').trim().replace(/^["']|["']$/g, '');
 
 let client;
 let connectionPromise;
@@ -234,10 +234,11 @@ function getUsersCollection() {
 }
 
 function authSecret() {
-  if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 32) {
+  const secret = (process.env.AUTH_SECRET || '').trim().replace(/^["']|["']$/g, '');
+  if (!secret || secret.length < 32) {
     throw new Error('AUTH_SECRET must be set to a random value at least 32 characters long.');
   }
-  return process.env.AUTH_SECRET;
+  return secret;
 }
 
 function signToken(user) {
