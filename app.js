@@ -8,7 +8,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { MongoClient } from 'mongodb';
 
 const appDir = dirname(fileURLToPath(import.meta.url));
-const projectDir = existsSync(join(process.cwd(), 'data', 'scholarships.json')) ? process.cwd() : appDir;
+const candidateDirs = [process.cwd(), appDir, join(appDir, '..'), join(appDir, '../..')];
+const projectDir = candidateDirs.find(dir => existsSync(join(dir, 'data', 'scholarships.json'))) || process.cwd();
 const publicDir = join(projectDir, 'public');
 const mongoUri = process.env.MONGODB_URI;
 const databaseName = process.env.MONGODB_DATABASE || 'schollyindia';
