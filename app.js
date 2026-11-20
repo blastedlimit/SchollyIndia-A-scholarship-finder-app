@@ -6,6 +6,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFileSync, existsSync } from 'node:fs';
 import { MongoClient } from 'mongodb';
+import defaultScholarships from './data/scholarships.json' with { type: 'json' };
+import defaultJobs from './data/government-jobs.json' with { type: 'json' };
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const candidateDirs = [process.cwd(), appDir, join(appDir, '..'), join(appDir, '../..')];
@@ -19,6 +21,12 @@ let connectionPromise;
 const scrypt = promisify(scryptCallback);
 const previewEvery = 3;
 
+const withTimeout = (promise, ms = 2500) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('DB operation timed out')), ms))
+  ]);
+
 function getLocalScholarships() {
   const jsonPath = join(projectDir, 'data', 'scholarships.json');
   if (existsSync(jsonPath)) {
@@ -28,7 +36,7 @@ function getLocalScholarships() {
       console.error('Error reading local scholarships.json:', e.message);
     }
   }
-  return [];
+  return Array.isArray(defaultScholarships) ? defaultScholarships : [];
 }
 
 function getLocalJobs() {
@@ -40,7 +48,7 @@ function getLocalJobs() {
       console.error('Error reading local government-jobs.json:', e.message);
     }
   }
-  return { metadata: {}, data: [], resources: {} };
+  return defaultJobs || { metadata: {}, data: [], resources: {} };
 }
 
 function computeLiveDates(item) {
@@ -479,11 +487,14 @@ app.get('/api/scholarships', async (_req, res, next) => {
     let all = [];
 
     try {
-      const collection = await getScholarshipCollection();
-      all = await collection
-        .find({}, { projection: { _id: 0, legacy_id: 0 } })
-        .sort({ scholarship_name: 1 })
-        .toArray();
+      const collection = await withTimeout(getScholarshipCollection(), 2500);
+      all = await withTimeout(
+        collection
+          .find({}, { projection: { _id: 0, legacy_id: 0 } })
+          .sort({ scholarship_name: 1 })
+          .toArray(),
+        2500
+      );
       if (!all || all.length === 0) {
         all = getLocalScholarships();
       }
@@ -517,12 +528,15 @@ app.get('/api/jobs', async (_req, res, next) => {
     let sourceMetadata = null;
 
     try {
-      const collection = await getJobsCollection();
-      const [jobs, count, meta] = await Promise.all([
-        collection.find({ jobId: { $exists: true } }, { projection: { _id: 0 } }).sort({ title: 1, region: 1 }).toArray(),
-        collection.countDocuments({ jobId: { $exists: true } }),
-        collection.findOne({ _id: 'catalog-metadata' }, { projection: { _id: 0 } })
-      ]);
+      const collection = await withTimeout(getJobsCollection(), 2500);
+      const [jobs, count, meta] = await withTimeout(
+        Promise.all([
+          collection.find({ jobId: { $exists: true } }, { projection: { _id: 0 } }).sort({ title: 1, region: 1 }).toArray(),
+          collection.countDocuments({ jobId: { $exists: true } }),
+          collection.findOne({ _id: 'catalog-metadata' }, { projection: { _id: 0 } })
+        ]),
+        2500
+      );
       allJobs = jobs;
       totalCount = count;
       sourceMetadata = meta;
