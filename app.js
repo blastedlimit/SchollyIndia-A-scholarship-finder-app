@@ -280,7 +280,13 @@ function getScholarshipCollection() {
     throw new Error('MONGODB_URI is not configured. Add it to .env locally or Netlify environment variables when deployed.');
   }
 
-  if (!client) client = new MongoClient(mongoUri);
+  if (!client) {
+    client = new MongoClient(mongoUri, {
+      serverSelectionTimeoutMS: 4000,
+      connectTimeoutMS: 4000,
+      maxPoolSize: 10
+    });
+  }
   if (!connectionPromise) {
     const connectingClient = client;
     connectionPromise = connectingClient.connect().catch(async error => {
